@@ -1,0 +1,23 @@
+table{
+	width:90% !important;
+	table-layout : fixed;
+	word-wrap : break-word;/*讓英文字要斷掉*/
+}
+
+thead{
+    background-color: #eee;
+    color: black;
+}
+
+th{
+    text-align: center;
+}
+
+td{
+	vertical-align:middle !important;
+	text-align: center;
+}
+
+td > img{
+    width:50%;    
+}

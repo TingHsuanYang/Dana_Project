@@ -1,0 +1,81 @@
+    .chatContainer {
+       position: fixed;
+       bottom: 0;
+       right: 50px;
+       width: 279px;
+       height: 28px;
+       border-color: black;
+       background-color:#f5f6f7;
+       z-index: 1000;
+       border-radius: 5px;
+       box-shadow: 0 2px 8px 0 rgba(0, 0, 0, .3);
+    }
+    .chatHeader{
+        position: absolute;
+        top:0;
+        background-color:#3578e5;
+        z-index: 2000;
+        width: 279px;
+        height: 28px;
+        border-radius: 5px 5px 0px 0px;
+        color: white;
+        
+    }
+    .chatContext{
+        margin-top:29px;
+        background-color:#f5f6f7;
+        z-index: 2000;
+        width: 279px;
+        height: 282px;
+        border-radius: 5px 5px 0px 0px;
+        overflow:auto;
+        
+    }
+    .chatFooter{
+        top:340;
+        background-color:#f5f6f7;
+        z-index: 2000;
+        width: 279px;
+        height: 34px;
+        border-radius: 5px 5px 0px 0px;
+        
+    }
+   /*建立新對話的提示框 */ 
+    .tooltip.fade.top,.tooltip.fade.top.in{
+        width: fit-content;
+    }
+    /*聊天列表用戶圖片顯示*/
+    .avatar {
+    vertical-align: middle;
+    width: 2em;
+    height: 2em;
+    border-radius: 50%;
+    }
+    /*聊天列表小視窗的搜尋輸入盒*/
+    .chatFooter>.input-group,.chatFooter .form-control {
+        height: 33px;
+        font-size: 12px;
+        border: 0;
+    }
+    
+    /*聊天列表小視窗的搜尋圖示區塊*/
+    .input-group-addon{
+        background-color: white;
+        border: 0;
+    }
+        
+    /*聊天列表放大*/
+    .chatWindow{
+        height: 344px;
+    }
+    .list-group-item{
+        background-color:#f5f6f7;
+        border:0;
+    }
+    .list-group-item:hover{
+        background-color:#e3e6e8;
+    }
+    /*輸入盒內字型調整*/
+    .ui.input > input {
+        font-family: 'Oswald','Noto Sans TC', sans-serif;
+    }

@@ -1,0 +1,57 @@
+/*頁籤style--start*/
+
+/*置中*/
+.nav.nav-tabs{
+    border: 0;
+    display: table;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 25px;
+    width:fit-content;
+}
+
+.mem_ind_content>ul.nav-tabs{
+    border-bottom: 1px solid #ddd;
+}
+
+.mem_ind_content>ul.nav-tabs>li{
+    margin-left: 25px;
+    margin-right: 25px;
+}
+
+.mem_ind_content>ul.nav-tabs a{
+    border: 0px;
+}
+
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover{
+    background-color: transparent;
+    border-bottom: 0px;
+}
+
+/*頁籤style--end*/
+
+/*頁面安排--start*/
+
+/*個人首頁-左半邊*/
+#home_left{
+    float:left;
+    width:30%;
+}
+.hl_div{
+    height: 200px;
+    width: 100%;
+    border: 1px solid #eee;
+    margin-bottom: 50px;
+}
+
+/*個人首頁-右半邊*/
+#home_right{
+    float:left;
+    width:70%;
+}
+
+
+
+
+/*��摰��--end*/
