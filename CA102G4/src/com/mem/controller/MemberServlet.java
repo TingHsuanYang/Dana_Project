@@ -57,6 +57,7 @@ public class MemberServlet extends HttpServlet {
 			session.removeAttribute("login_state");
 			session.removeAttribute("memberVO");
 			session.removeAttribute("token");
+			session.removeAttribute("addCR_token");
 			res.sendRedirect(req.getContextPath() + "/front_end/index.jsp");
 		}
 		// 登出結束
@@ -77,24 +78,21 @@ public class MemberServlet extends HttpServlet {
 		 */
 
 		if ("login".equals(action)) {
-			System.out.println("test123");
+			System.out.println("登入有進來");
 
 			// 【取得使用者 帳號(account) 密碼(password)】
 			String mem_Account = req.getParameter("mem_Account");
 			String mem_Password = req.getParameter("mem_Password");
 			Map<String, String> errorMsgs = new HashMap<String, String>();
-			System.out.println("test456");
 
-			if ("".equals(mem_Account)) {
-				errorMsgs.put("請輸入你的帳號", "test");
+			if (mem_Account == null || mem_Account.trim().length() == 0) {
+				errorMsgs.put("mem_Account", "帳號：請勿空白");
 			}
-			if ("".equals(mem_Password)) {
-				errorMsgs.put("請輸入你的密碼", "test");
+			if (mem_Password == null || mem_Password.trim().length() == 0) {
+				errorMsgs.put("mem_Password", "密碼：請勿空白");
 			}
 
 			if (!errorMsgs.isEmpty()) {
-				System.out.println("test789");
-
 				req.setAttribute("errorMsgs", errorMsgs);
 				String url = "/front_end/member/mem_login.jsp";
 				RequestDispatcher rd = req.getRequestDispatcher(url);
@@ -272,7 +270,14 @@ public class MemberServlet extends HttpServlet {
 				// }
 				System.out.println("手機有");
 
-				Integer mem_Sex = Integer.valueOf(req.getParameter("mem_Sex"));
+				String mem_SexStr = req.getParameter("mem_Sex");
+				Integer mem_Sex = null;
+				if (mem_SexStr == null) {
+					errorMsgs.add("請選擇性別");
+				} else {
+					mem_Sex =  Integer.valueOf(mem_SexStr);
+				}
+				
 				System.out.println("性別有");
 
 				String mem_Profile = req.getParameter("mem_Profile");
