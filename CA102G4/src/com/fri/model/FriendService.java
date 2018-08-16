@@ -33,6 +33,7 @@ public class FriendService {
 		
 		return fri;
 	}
+	
 	//更新好友狀態(封鎖或解除封鎖時)
 	public Friend updateFriStat_Block(String memID_self,String memID_Fri,Integer stat) {
 		Friend fri = new Friend();
@@ -45,8 +46,14 @@ public class FriendService {
 		return fri ;
 	}
 	
+	//刪除好友時(處理交易問題)
 	public void deleteFri(String memID_self,String memID_Fri) {
 		dao.deleteFri(memID_self, memID_Fri);
+	}
+	
+	//拒絕他人好友邀請
+	public void rejectFri(String memID_self,String memID_Fri) {
+		dao.rejectFri(memID_self, memID_Fri);
 	}
 	
 	//查詢好友名單搭配好友狀態(封鎖或為好友關係)
@@ -63,6 +70,14 @@ public class FriendService {
 	public List<Friend> findMyBirFri(String memID_self){
 		return dao.findMyBirFri(memID_self);
 	};
-
 	
+	//查詢好友之間的關係(一筆)
+	public Friend findRelationship(String memID_self,String memID_Fri) {
+		return dao.findRelation(memID_self, memID_Fri);
+	}
+
+	//當接受別人的好友邀請時(處理交易問題)
+	public void becomeFri(String memID_self,String memID_Fri) {
+		dao.becomeFri(memID_self, memID_Fri);
+	}
 }

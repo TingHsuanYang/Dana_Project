@@ -42,6 +42,13 @@ public class ProductReportService {
 
 		return productReportVO;
 	}
+	
+	public ProductReportVO updateProductReport(ProductReportVO productReportVO) {
+
+		dao.update(productReportVO);
+
+		return productReportVO;
+	}
 
 	public void deleteProductReport(Integer prod_report_product_id, String prod_report_mem_id) {
 		dao.delete(prod_report_product_id,prod_report_mem_id);

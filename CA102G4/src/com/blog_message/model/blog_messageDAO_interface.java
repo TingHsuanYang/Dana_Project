@@ -10,4 +10,10 @@ public interface blog_messageDAO_interface {
 	public int delete(String message_id);
 	
 	public List<blog_messageVO> findByBlogId(String blog_id);
+	
+	public int updateStatus(String message_id,String mem_id,Integer bm_status);
+	
+	public List<blog_messageVO> getAll();
+	
+	public int updateStatusForBackEnd(String message_id,Integer bm_status);
 }

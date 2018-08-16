@@ -2,68 +2,76 @@ package com.blog.controller;
 
 import java.io.*;
 import java.sql.*;
+
+import javax.naming.Context;
+import javax.naming.NamingException;
 import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
-
-
-/**
- * Servlet implementation class ADPicReader
- */
+import javax.sql.DataSource;
 @WebServlet("/blogPicReader")
 public class blogPicReader extends HttpServlet {
-	private static final long serialVersionUID = 1L;
+
 	Connection con;
-	
-	public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-		req.setCharacterEncoding("UTF-8");
-		String blog_id = req.getParameter("blog_id");
-		
+
+	public void doGet(HttpServletRequest req, HttpServletResponse res)
+			throws ServletException, IOException {
+
+    req.setCharacterEncoding("UTF-8");
 		res.setContentType("image/gif");
-		ServletOutputStream out =res.getOutputStream();
-		
+		ServletOutputStream out = res.getOutputStream();
+
 		try {
-			Statement stat=con.createStatement();
-			ResultSet rs =stat.executeQuery("SELECT BLOG_COVERIMAGE FROM BLOG WHERE BLOG_ID='"+blog_id+"'");
-			if(rs.next()) {
+			Statement stmt = con.createStatement();
+			String blog_id = req.getParameter("blog_id");
+			ResultSet rs = stmt.executeQuery("SELECT BLOG_COVERIMAGE FROM BLOG WHERE BLOG_ID='"+blog_id+"'");
+
+			if (rs.next()) {
 				BufferedInputStream in = new BufferedInputStream(rs.getBinaryStream("BLOG_COVERIMAGE"));
-				byte[] buf = new byte[4*1024];
+				byte[] buf = new byte[4 * 1024]; // 4K buffer
 				int len;
-				while((len= in.read(buf))!=-1) {
-					out.write(buf,0,len);
+				while ((len = in.read(buf)) != -1) {
+					out.write(buf, 0, len);
 				}
 				in.close();
+			} else {
+				//res.sendError(HttpServletResponse.SC_NOT_FOUND);
+				InputStream in = getServletContext().getResourceAsStream("/front_end/images/all/no.png");
+				byte[] buf = new byte[in.available()];
+				in.read(buf);
+				out.write(buf);
+				in.close();
 			}
-			
 			rs.close();
-			stat.close();
-		}catch(SQLException se){
-			System.out.println(se);
+			stmt.close();
+		} catch (Exception e) {
+			//System.out.println(e);
+			InputStream in = getServletContext().getResourceAsStream("/front_end/images/all/null.png");
+			byte[] buf = new byte[in.available()];
+			in.read(buf);
+			out.write(buf);
+			in.close();
 		}
 	}
 
-	public void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-		doGet(req, res);
-	}
-	
-	public void init() {
+	public void init() throws ServletException {
 		try {
-			Class.forName("oracle.jdbc.driver.OracleDriver");
-			con = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:xe", "CA102G4", "12345678");
-		}catch(ClassNotFoundException ce){
-			throw new RuntimeException("無法載入資料庫驅動程式"+ce.getMessage());
-		}catch(SQLException se) {
-			throw new RuntimeException("資料庫發生錯誤"+se.getMessage());
+			Context ctx = new javax.naming.InitialContext();
+			DataSource ds = (DataSource) ctx.lookup("java:comp/env/jdbc/CA102G4");
+			con = ds.getConnection();
+		} catch (NamingException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
 	}
-	
-	public void distory() {
+
+	public void destroy() {
 		try {
-			 if(con!=null) con.close();
+			if (con != null) con.close();
 		} catch (SQLException e) {
 			System.out.println(e);
 		}
 	}
+
 }
-
-

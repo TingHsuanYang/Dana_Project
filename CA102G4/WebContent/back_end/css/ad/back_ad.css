@@ -1,7 +1,7 @@
 table{
 	width:90% !important;
 	table-layout : fixed;
-	word-wrap : break-word;/*Åı­^¤å¦r­nÂ_±¼*/
+	word-wrap : break-word;/*ï¿½ï¿½ï¿½^ï¿½ï¿½rï¿½nï¿½_ï¿½ï¿½*/
 }
 
 thead{
@@ -21,3 +21,22 @@ td{
 td > img{
     width:50%;    
 }
+
+/* ul#adTab{ */
+/* 	position: relative; */
+/*     z-index: 0; */
+/* } */
+
+
+ /*å› ç‚ºå·¦æ–¹å°é¸å–®ä¸€ç›´è¢«tabsæ“‹ä½*/
+ #content{
+ 	position: absolute !important;
+ 	z-index: -1 !important;
+ 	width: auto !important;
+ }
+ .ad_text,
+ .ad_link,
+ .ad_title{
+ 	text-align: left;
+ 	word-break: break-all;
+ }

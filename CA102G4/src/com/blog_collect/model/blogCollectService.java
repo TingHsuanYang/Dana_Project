@@ -31,4 +31,21 @@ public class blogCollectService {
 	public List<blog_collectVO> getAllByMem_id(String mem_id) {
 		return dao.getAllByMem_id(mem_id);
 	}
+	
+	public List<blog_collectVO> getAllByBlogId(String blog_id) {
+		return dao.getAllByBlogId(blog_id);
+	}
+	
+	public int findByPrimaryKey(String mem_id,String blog_id) {
+		blog_collectVO blog_collectVO = new blog_collectVO();
+		
+		blog_collectVO.setMem_id(mem_id);
+		blog_collectVO.setBlog_id(blog_id);
+		int cnt = dao.findByPrimaryKey(blog_collectVO);
+		return cnt;
+	}
+	
+	public void deleteAll(String blog_id) {
+		dao.deleteAll(blog_id);
+	}
 }

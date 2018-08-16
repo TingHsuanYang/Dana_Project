@@ -84,6 +84,10 @@
 		    opacity: 0.8;
 		}
 		
+		.btn-template-outlined:focus {
+		    color: #fff;
+		}
+		
 		.btn-template-outlined {
 		    background: #1e7f64;
 		    border: 1px solid #1e7f64 !important;

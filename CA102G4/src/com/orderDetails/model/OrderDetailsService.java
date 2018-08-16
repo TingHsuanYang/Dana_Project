@@ -44,8 +44,11 @@ public class OrderDetailsService {
 		return dao.findByPK(details_order_id,details_product_id);
 	}
 
-	public List<OrderDetailsVO
-	> getAll() {
+	public List<OrderDetailsVO> getAll() {
 		return dao.getAll();
+	}
+	
+	public List<OrderDetailsVO> getOrderDetialsByOrdId(String details_order_id) {
+		return dao.getOrderDetialsByOrdId(details_order_id);
 	}
 }

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Timestamp;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -16,8 +17,10 @@ import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 
+import org.apache.commons.lang3.StringUtils;
 
 import com.product.model.ProductService;
 import com.product.model.ProductVO;
@@ -40,7 +43,10 @@ public class ProductServlet extends HttpServlet {
 		req.setCharacterEncoding("UTF-8");
 		String action = req.getParameter("action");
 		 if ("insert".equals(action)) { // 來自 front_end/store/store_add_product.jsp的請求  
-				
+			 HttpSession session = req.getSession();
+			 String judgeDuplicate = req.getParameter("judgeDuplicate");
+			 String token = (String) session.getAttribute("token");
+			if(StringUtils.isNotBlank(token) && token.equals(judgeDuplicate)) {
 			 	Map<String,String> errorMsgs = new LinkedHashMap<String,String>();
 				// Store this set in the request scope, in case we need to
 				// send the ErrorPage view.
@@ -264,22 +270,22 @@ public class ProductServlet extends HttpServlet {
 					
 					/***************************3.修改完成,準備轉交(Send the Success view)*************/
 					req.setAttribute("productVO", productVO); // 資料庫update成功後,正確的的productVO物件,存入req
-					if(requestURL.equals("/product/addProduct.jsp")) {
-						String url = "/product/listAllProduct.jsp";
-						RequestDispatcher successView = req.getRequestDispatcher(url); // 資料庫取出的list物件,存入request
-						successView.forward(req, res);
-					}else if(requestURL.equals("/front_end/store/store_add_product.jsp")) {
+					if(requestURL.equals("/front_end/store/store_add_product.jsp")) {
 						String url = "/front_end/personal_area/personal_area_sell.jsp";
 						RequestDispatcher successView = req.getRequestDispatcher(url);
 						successView.forward(req, res);
 					}
-
+					session.removeAttribute("token");
 					/***************************其他可能的錯誤處理*************************************/
 				} catch (Exception e) {
 					e.printStackTrace();
 					errorMsgs.put("修改資料失敗:",e.getMessage());
 					RequestDispatcher failureView = req.getRequestDispatcher(requestURL);
 					failureView.forward(req, res);
+				}}else {
+					String url = "/front_end/personal_area/personal_area_sell.jsp";
+					RequestDispatcher successView = req.getRequestDispatcher(url);
+					successView.forward(req, res);
 				}
 			}
 		
@@ -347,6 +353,29 @@ public class ProductServlet extends HttpServlet {
 			}
 		}
 		
+		if ("deleteByAjax".equals(action)) { // 來自listAllProduct.jsp or /front_end/personal_area/personal_area_sell.jsp
+
+			List<String> errorMsgs = new LinkedList<String>();
+			// Store this set in the request scope, in case we need to
+			// send the ErrorPage view.
+			req.setAttribute("errorMsgs", errorMsgs);
+	
+			String requestURL = req.getParameter("requestURL"); //送出刪除的來源網頁路徑:可能為 product/listAllProduct.jsp or /front_end/personal_area/personal_area_sell.jsp
+			
+			try {
+				/***************************1.接收請求參數***************************************/
+				Integer product_id = new Integer(req.getParameter("product_id"));
+				
+				/***************************2.開始刪除資料***************************************/
+				ProductService productSvc = new ProductService();
+				productSvc.deleteProduct(product_id);
+	
+				/***************************其他可能的錯誤處理**********************************/
+			} catch (Exception e) {
+				errorMsgs.add("刪除資料失敗:"+e.getMessage());
+			}
+		}
+		
 		if ("delete".equals(action)) { // 來自listAllProduct.jsp or /front_end/personal_area/personal_area_sell.jsp
 
 			List<String> errorMsgs = new LinkedList<String>();
@@ -378,7 +407,6 @@ public class ProductServlet extends HttpServlet {
 				failureView.forward(req, res);
 			}
 		}
-		
 		if ("getOne_For_Update".equals(action)) { //  來自listAllProduct.jsp or /front_end/personal_area/personal_area_sell.jsp
 			System.out.println("get into getOne_For_Update");
 			Map<String,String> errorMsgs = new LinkedHashMap<String,String>();
@@ -398,6 +426,12 @@ public class ProductServlet extends HttpServlet {
 				/***************************3.查詢完成,準備轉交(Send the Success view)************/
 				req.setAttribute("productVO", productVO);         // 資料庫取出的productVO物件,存入req
 				if(requestURL.equals("/front_end/personal_area/personal_area_sell.jsp")) {
+					String url = "/front_end/store/store_update_product.jsp";
+					RequestDispatcher successView = req.getRequestDispatcher(url); // 資料庫取出的list物件,存入request
+					successView.forward(req, res);
+				}
+				
+				if(requestURL.equals("/front_end/store/store_product.jsp")) {
 					String url = "/front_end/store/store_update_product.jsp";
 					RequestDispatcher successView = req.getRequestDispatcher(url); // 資料庫取出的list物件,存入request
 					successView.forward(req, res);
@@ -641,7 +675,7 @@ public class ProductServlet extends HttpServlet {
 				req.setAttribute("productVO", productVO); // 資料庫update成功後,正確的的productVO物件,存入req
 			
 				if(requestURL.equals("/front_end/store/store_update_product.jsp")) {
-					String url = "/front_end/personal_area/personal_area_sell.jsp?whichPage="+req.getParameter("whichPage");
+					String url = "/front_end/personal_area/personal_area_sell.jsp";
 					RequestDispatcher successView = req.getRequestDispatcher(url); // 資料庫取出的list物件,存入request
 					successView.forward(req, res);
 				}else if(requestURL.equals("/product/update_product_input.js")) {
@@ -659,7 +693,62 @@ public class ProductServlet extends HttpServlet {
 			}
 		}
 
-
+		if ("listProducts_ByCompositeQuery".equals(action)) { // 來自select_page.jsp的複合查詢請求
+			List<String> errorMsgs = new LinkedList<String>();
+			// Store this set in the request scope, in case we need to
+			// send the ErrorPage view.
+			req.setAttribute("errorMsgs", errorMsgs);
+			System.out.println("進入複合查詢");
+			try {
+				
+				/***************************1.將輸入資料轉為Map**********************************/ 
+				//採用Map<String,String[]> getParameterMap()的方法 
+				//注意:an immutable java.util.Map 
+				//Map<String, String[]> map = req.getParameterMap();
+				HttpSession session = req.getSession();
+				
+				String orderby = null;
+				if(req.getParameter("orderby")!=null) {
+					orderby = req.getParameter("orderby");
+				}
+				
+				Integer PRODUCT_CATEGORY_ID=null;
+				if(req.getParameter("PRODUCT_CATEGORY_ID")!=null) {
+					PRODUCT_CATEGORY_ID = Integer.parseInt(req.getParameter("PRODUCT_CATEGORY_ID"));
+				}
+				System.out.println("進入複合查詢2");
+				Map<String, String[]> map = (Map<String, String[]>)session.getAttribute("map");
+				if (req.getParameter("whichPage") == null){
+					HashMap<String, String[]> map1 = new HashMap<String, String[]>(req.getParameterMap());
+					session.setAttribute("map",map1);
+					map = map1;
+				} 
+				
+				/***************************2.開始複合查詢***************************************/
+				ProductService prodSvc = new ProductService();
+				List<ProductVO> list  = prodSvc.getAll(map);
+				
+				/***************************3.查詢完成,準備轉交(Send the Success view)************/
+				req.setAttribute("list", list); // 資料庫取出的list物件,存入request
+				if(PRODUCT_CATEGORY_ID != null) {
+					req.setAttribute("PRODUCT_CATEGORY_ID", PRODUCT_CATEGORY_ID);
+				}
+				
+				if(orderby != null) {
+					req.setAttribute("orderby", orderby);
+				}
+				RequestDispatcher successView = req.getRequestDispatcher("/front_end/store/listProducts_ByCompositeQuery.jsp"); // 成功轉交listProducts_ByCompositeQuery.jsp
+				successView.forward(req, res);
+				
+				/***************************其他可能的錯誤處理**********************************/
+			} catch (Exception e) {
+				errorMsgs.add(e.getMessage());
+				RequestDispatcher failureView = req
+						.getRequestDispatcher("/select_page.jsp");
+				failureView.forward(req, res);
+			}
+		}
+		
 		
 	}		
 }

@@ -1,9 +1,28 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %> 
 <%@ page import="java.util.*" %>
 <%@ page import="com.ad.model.*" %>
+<%@ page import="com.admin.model.*"%>
+<% 
+	//**********************管理者登入身分驗證********************************//
+	AdminVO adminVO = (AdminVO)session.getAttribute("adminVO");
+	if(adminVO == null){
+		adminVO = (AdminVO)session.getAttribute("adminVO");
+	}
+	
+	boolean login_state_backEnd = false;
+	Object login_state_temp = session.getAttribute("login_state_backEnd");
+	if(login_state_temp!=null){
+		login_state_backEnd=(boolean)login_state_temp;
+	}
+	
+	if(login_state_backEnd!=true){
+		session.setAttribute("location_Backend",request.getRequestURI());
+		response.sendRedirect(request.getContextPath()+"/back_end/admin/back_login.jsp");
+		return;
+	}
 
-<%
 	AdService adSvc = new AdService();
 	List<AdVO> list = adSvc.getAllAD();
 	pageContext.setAttribute("list", list);
@@ -41,12 +60,29 @@
 		
 		<!-- AD頁面自己定義的CSS-->
         <link rel="stylesheet" href="<%=request.getContextPath()%>/back_end/css/ad/back_ad.css">
+        <style>
+
         
- 
+        </style>
+		<script type="text/javascript">
+			//引入廣告簡介資訊，內容太多冗長
+			$(function(){
+			    var len = 30; // 超過100個字以"..."取代
+			    $("tr td.ad_text").each(function(i){
+			   	 var temptext=$(this).text().trim().replace('  ', '');
+			        if(temptext.length>len){
+			            $(this).attr("title",temptext);
+			            var text=temptext.substring(0,len-1)+"...";
+			            $(this).text(text);
+			        }
+			    });
+			});
+			
+		</script>
     </head>
     <body>
         <div class="wrapper">
-                <!-- Sidebar  -->
+            <!-- Sidebar  -->
             <nav id="sidebar" class="navbar-fixed-left">
                 <div class="sidebar-header">
                     <h3>Travel Maker</h3>
@@ -56,110 +92,91 @@
                 <ul class="list-unstyled components">
                     <li class="active">
                         <a href="<%=request.getContextPath()%>/back_end/back_index.jsp">
-                            <i class="fas fa-home"></i>
-                            回首頁
+                            <i class="fas fa-home"></i> 回首頁
                         </a>
                     </li>
                     
                     <li>
                         <li class="dropdown">
                             <a href="#auth_Submenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
-                                <i class="fas fa-users"></i>
-                                權限管理
+                                <i class="fas fa-users"></i>權限管理
                             </a>
 
                             <ul class="dropdown-menu" id="auth_Submenu">
                                 <li>
-                                    <a href="#">管理員</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/admin/manager_admin.jsp">管理員</a>
                                 </li>
                                 <li>
-                                    <a href="#">會員</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/admin/manager_member.jsp">會員</a>
                                 </li>
                             </ul>
 
                         </li>
                         
                         <li>
-                            <a href="#">
-                                <i class="fas fa-newspaper"></i>
-                                最新消息管理
+                            <a href="<%=request.getContextPath()%>/back_end/news/news.jsp">
+                                <i class="fas fa-newspaper"></i>最新消息管理
                             </a>
                         </li>
                         
                         <li>
-                            <a href="#">
-                                <i class="fas fa-image"></i>
-                                景點管理
+                            <a href="<%=request.getContextPath()%>/back_end/attEdit/back_attEdit.jsp">
+                                <i class="fas fa-image"></i>景點管理
                             </a>
                         </li>
                        
                         <li class="dropdown">
                             <a href="#category_Submenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
-                                <i class="fas fa-tag"></i>
-                                標籤管理
+                                <i class="fas fa-tag"></i>標籤管理
                             </a>
                             <ul class="dropdown-menu" id="category_Submenu">
                                 <li>
-                                    <a href="Back_TagBlog.html">旅遊記</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/blog/blog_tag.jsp">旅遊記</a>
                                 </li>
                                 <li>
-                                    <a href="#">問答區</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/qa_list/qa_list.jsp">問答區</a>
                                 </li>
                             </ul>
                         </li>
                         
                         <li class="dropdown">
                             <a href="#report_Submenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle" aria-haspopup="true" >
-                                <i class="fas fa-comment-dots"></i>
-                                檢舉管理
+                                <i class="fas fa-comment-dots"></i>檢舉管理
                             </a>
                             <ul class="dropdown-menu" id="report_Submenu">
                                 <li>
-                                    <a href="#">會員檢舉</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/member/member_report.jsp">會員檢舉</a>
                                 </li>
                                 <li>
-                                    <a href="Back_ReportBlog.html">旅遊記檢舉</a>
+                                    <a href="<%=request.getContextPath()%>/blog.do?action=blogReportManage">旅遊記檢舉</a>
                                 </li>
                                 <li>
-                                    <a href="#">問答區檢舉</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/qa_report/qa_report.jsp">問答區檢舉</a>
                                 </li>
                                 <li>
-                                    <a href="#">照片牆檢舉</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/photo_wall/photo_report.jsp">照片牆檢舉</a>
                                 </li>
                                 <li>
-                                    <a href="#">揪團檢舉</a>
-                                </li>
-                                <li>
-                                    <a href="#">商品檢舉</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/store/product_report.jsp">商品檢舉</a>
                                 </li>
                             </ul>
                         </li>
-                        
-                        <li>
-                            <a href="#">
-                                <i class="fas fa-shopping-cart"></i>
-                                交易款項管理
-                            </a>
-                        </li>
-                        
                         <li>
                             <a href="<%=request.getContextPath()%>/back_end/ad/back_ad.jsp">
-                                <i class="fas fa-audio-description"></i>
-                                專欄廣告管理
+                                <i class="fas fa-audio-description"></i>專欄廣告管理
                             </a>
                         </li>
                         
                         <li class="dropdown">
                             <a href="#aboutUS_Submenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
-                                <i class="fas fa-briefcase"></i>
-                                關於我們管理
+                                <i class="fas fa-briefcase"></i>關於我們管理
                                 </a>
                             <ul class="dropdown-menu" id="aboutUS_Submenu">
                                 <li>
-                                    <a href="#">關於我們</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/about_us/about_us.jsp">關於我們</a>
                                 </li>
                                 <li>
-                                    <a href="#">FAQ</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/faq/faq.jsp">FAQ</a>
                                 </li>
                             </ul>
                         </li>
@@ -179,10 +196,15 @@
                             <i class="fas fa-align-left"></i>
                         </button>
                         <span style="float: right">
-                        <button type="button" class="btn btn-info" onclick="location.href='<%=request.getContextPath()%>/back_end/back_login.jsp'">
-                            登出
-                            <i class="fas fa-sign-out-alt"></i>
-                        </button>
+                        	<span style="font-size:1.5em;margin-right:10px;vertical-align:sub;">Welcome！${adminVO.admin_Name}</span>
+	                        <c:choose>
+	                          <c:when test="<%=login_state_backEnd %>">
+	                           <a href="<%= request.getContextPath()%>/admin.do?action=logout"><span class=" top_banner btn btn-info"><i class=" fas fa-sign-out-alt" aria-hidden="true"></i></span></a>
+	                          </c:when>
+	                          <c:otherwise>
+	                           <a href="<%= request.getContextPath()%>/admin_login.jsp"><span class="top_banner btn btn-info"><i class=" fa fa-user" aria-hidden="true"></i></span></a>
+	                          </c:otherwise>
+	                        </c:choose>
                         </span>
                     </div>
                 </nav>
@@ -208,79 +230,71 @@
                 
                 <div class="row">
                     <div class="col-lg-12">
-                        <!-- 這邊要放所有廣告 -->
-                        <table class="table">
-                        	<thead>
-                        		<th>編號</th>
-                        		<th>標題</th>
-                        		<th>簡介</th>
-                        		<th>連結</th>
-                        		<th>圖片</th>
-                        		<th>狀態</th>
-                        		<th>修改</th>
-                        		<th>刪除</th>
-                        	</thead>
-                        	<tbody>
-								<c:forEach var="advo" items="${list}">
-									<tr>
-										<td>${advo.ad_ID}</td>
-										<td>${advo.ad_Title}</td>
-										<td>${advo.ad_Text}</td>
-										<td>${advo.ad_Link}</td>
-										<td><img src="<%=request.getContextPath()%>/ADPicReader?AD_ID=${advo.ad_ID}"></td>
-										<td>
-											<form action="<%=request.getContextPath()%>/ad.do" method="post">
-											<input type="hidden" name="adId" value="${advo.ad_ID}">
-											<input type="hidden" name="action" value="UpdateStat">
-											<c:choose>
-									            <c:when test="${advo.ad_Stat == 0}">
-													<input type="hidden" name="stat" value="1">
-													<button type="submit" class="btn btn-warning"><i class="fas fa-bell"></i>上架廣告</button>
-									            </c:when>
-									            <c:otherwise>
-													<input type="hidden" name="stat" value="0">
-													<button type="submit" class="btn btn-success"><i class="fas fa-arrow-down"></i>下架廣告</button>	
-									            </c:otherwise>
-									        </c:choose>
-									        </form>
-										</td>
-										<td>
-											<form action="<%=request.getContextPath()%>/ad.do" method="post">
-												<input type="hidden" name="adId" value="${advo.ad_ID}">
-												<input type="hidden" name="action" value="getOne_For_Update">
-												
-												<c:choose>
-										            <c:when test="${advo.ad_Stat == 0}">
-														<input type="submit" class="btn btn-primary" value="修改">
-										            </c:when>
-										            <c:otherwise>
-														<input type="submit" class="btn btn-primary" value="無法修改" disabled="disabled">	
-										            </c:otherwise>
-										        </c:choose>
-												
-											</form>
-										</td>
-										<td>
-											<form action="<%=request.getContextPath()%>/ad.do" method="post" onSubmit="return confirm('確認要刪除嗎?');">
-												<input type="hidden" name="adId" value="${advo.ad_ID}">
-												<input type="hidden" name="action" value="delete">
-												
-												<c:choose>
-										            <c:when test="${advo.ad_Stat == 0}">
-														<input type="submit" class="btn btn-danger" value="刪除">
-										            </c:when>
-										            <c:otherwise>
-														<input type="submit" class="btn btn-danger" value="無法刪除" disabled="disabled">	
-										            </c:otherwise>
-										        </c:choose>
-												
-											</form>
-										</td>
-									</tr>								
-								</c:forEach>
-                        	</tbody>
-
-                        </table>                
+                    	<!-- AD頁籤  下架/上架-->
+                    	<div class="bs-example-tabs">
+                    		<!-- AD頁籤定義 -->
+                    		<ul id="adTab" class="nav nav-tabs">
+                    			<li class="<%=request.getAttribute("display_tabs") == null ? "active" :"" %>">
+                        			<a href="#offContent" data-toggle="tab">
+                        				<i class='fas fa-arrow-down'></i>未上架
+                        			</a>
+                   			 	</li>
+                   			 	<li class="<%=request.getAttribute("display_tabs") == null ? "" :"active" %>">
+                        			<a href="#onContent" data-toggle="tab">
+                        				<i class='fas fa-bell'></i>已上架
+                        			</a>
+                   			 	</li>
+                    		</ul>
+                    		<!-- AD頁籤內容定義 -->
+                    		<div id="adTabContent" class="tab-content  ui piled segment">
+                    			<div id="offContent" class="tab-pane fade <%=request.getAttribute("display_tabs") == null ? "active in" :"" %>">
+			                   	<!-- 這邊要放未上架的廣告 -->
+			                   		<br>
+			                        <table class="table">
+			                        	<thead>
+			                        		<th>編號</th>
+			                        		<th>標題</th>
+			                        		<th>簡介</th>
+			                        		<th>連結</th>
+			                        		<th>圖片</th>
+			                        		<th>上架/下架時間</th>
+			                        		<th>狀態</th>
+			                        		<th>修改</th>
+			                        		<th>刪除</th>
+			                        	</thead>
+			                        	<c:forEach var="advo" items="${list}">
+											<c:if test="${advo.ad_Stat == 0}">
+												<%@ include file="ad_Content.file" %>
+											</c:if>
+										</c:forEach>		
+			                        </table> 
+                    			</div>
+                    			
+                    			<!-- 已上架的頁籤內容 -->
+                    			<div id="onContent" class="tab-pane fade <%=request.getAttribute("display_tabs") == null ? "" :"active in" %>">
+                    			<!-- 這邊要放已上架的廣告 -->
+			                   		<br>
+			                        <table class="table">
+			                        	<thead>
+			                        		<th>編號</th>
+			                        		<th>標題</th>
+			                        		<th>簡介</th>
+			                        		<th>連結</th>
+			                        		<th>圖片</th>
+			                        		<th>上架/下架時間</th>
+			                        		<th>狀態</th>
+			                        		<th>修改</th>
+			                        		<th>刪除</th>
+			                        	</thead>
+			                        	<c:forEach var="advo" items="${list}">
+											<c:if test="${advo.ad_Stat == 1}">
+												<%@ include file="ad_Content.file" %>
+											</c:if>
+										</c:forEach>
+			                        </table>
+                    			</div>
+                    		</div>
+                    	</div>                   
                     </div>
                 </div>
 

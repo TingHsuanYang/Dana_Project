@@ -40,7 +40,7 @@ public class DBImgReader extends HttpServlet {
 	
 	private void nopic(ServletOutputStream out) throws IOException{
 		
-		InputStream in = getServletContext().getResourceAsStream("/img/nopic.png");
+		InputStream in = getServletContext().getResourceAsStream("/front_end/images/all/nopic.png");
 		byte[] buf = new byte[in.available()];
 		in.read(buf);
 		out.write(buf);
@@ -58,9 +58,8 @@ public class DBImgReader extends HttpServlet {
 		if(action != null){
 			try {
 				String id = request.getParameter("id");
-
+				
 				String pk = new String(id.toUpperCase().getBytes("ISO-8859-1"), "Big5");
-
 				String sql="";
 				
 				switch(action.toLowerCase()){
@@ -71,7 +70,26 @@ public class DBImgReader extends HttpServlet {
 					/***************補充：Ailee用來讀取照片牆的照片************************/
 					case "photowall": 
 						sql = "SELECT PHOTO FROM PHOTO_WALL WHERE PHOTO_NO = '" + pk + "'";
-						break;
+						break;	
+					/***************補充：Ailee用來讀取行程的照片************************/
+					case "trip": 
+						sql ="select ATTRACTIONS.ATT_PICTURE"+ 
+								" from ATTRACTIONS INNER JOIN"+
+							    "(select ATTRACTIONS_TRIP.ATT_NO"+
+							    " from ATTRACTIONS_TRIP INNER JOIN"+
+							    "(select TRIP.TRIP_NO, TRIP_DAYS.TRIPDAY_NO"+
+							    " from TRIP INNER JOIN TRIP_DAYS on(TRIP.TRIP_NO = TRIP_DAYS.TRIP_NO)"+
+							    " where TRIP.TRIP_NO ='"+pk+"' AND ROWNUM=1) FDLocation"+
+							    " on(ATTRACTIONS_TRIP.TRIPDAY_NO = FDLocation.TRIPDAY_NO)"+
+							    " where ROWNUM=1) FDATT"+
+							    " on(ATTRACTIONS.ATT_NO = FDATT.ATT_NO)"+
+							 " where RowNum = 1";
+					break;
+					/***************補充：用來讀取揪團的照片******************************/
+					case "grp":
+					      sql = "SELECT grp_PHOTO FROM GRP WHERE GRP_ID = '" + pk + "'";
+					    break;
+
 					case "store":
 						sql = "SELECT store_img FROM store WHERE store_id = '" + pk + "'";
 						break;

@@ -50,6 +50,7 @@
     height: 200px;
     opacity: 1; 
     max-height: 100%;
+    object-fit: cover;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 .mem_ind_name > p{
@@ -82,7 +83,6 @@
 /*個人首頁右半邊新增等按鈕*/
 .add_Div{
     border:1px solid #eee;
-    height:70px;
     width:100%;
     box-shadow: 2px 2px 5px grey;
     padding:10px;
@@ -145,7 +145,7 @@
     display:flex;
      /* 以下值可修改成 wrap | nowrap | wrap | wrap-reverse*/
     flex-wrap: wrap;
-    height:500px;
+/*     height:500px; 為了讓圖片只有一張時，不會照片下面多出空白*/
 }
 .flex>.item {
     flex:30%;
@@ -155,7 +155,8 @@
     align-items: center;
     color: white;
     font-size: 2rem;
-    height:50%;
+/*     height:50%; */
+	height:250px; /*改每張照片圖寫成固定高度*/
  }
 .flex>.item>a,
 .flex>.item img{
@@ -178,6 +179,8 @@
 .ui.items > .item > .image > a > img{
     height: 100%;
     width: 100%;
+    border-radius: .125rem 0 0 .125rem;
+    object-fit: cover;
 }
 .ui.items > .item:hover{
     box-shadow: 2px 2px 5px grey;
@@ -189,6 +192,16 @@
     width:100%;
 }
 .ui.items > .item > .content > .description{
-    margin-top:0; 
+  	color: #666; 
+}
+/*錯誤訊息，標頭會跑掉*/
+#errorModal > div > div > div.modal-header{
+	display: inline-flex;
+    width: 100%;
 }
 
+ /*若搜尋不到文章或圖片時，將會顯示 驚嘆號圖片nothing.png*/
+ .nothing{
+ 	width:50px;
+ 	heigh:50px;
+ }

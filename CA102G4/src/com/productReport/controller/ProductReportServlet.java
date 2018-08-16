@@ -2,7 +2,7 @@ package com.productReport.controller;
 
 
 import java.io.IOException;
-
+import java.io.PrintWriter;
 import java.sql.Timestamp;
 import java.util.LinkedList;
 import java.util.List;
@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.product.model.ProductService;
+import com.product.model.ProductVO;
 import com.productReport.model.ProductReportService;
 import com.productReport.model.ProductReportVO;
 
@@ -227,6 +229,55 @@ public class ProductReportServlet extends HttpServlet{
 				errorMsgs.add("修改資料失敗:"+e.getMessage());
 				RequestDispatcher failureView = req.getRequestDispatcher("/productReport/update_productReport_input.jsp");
 				failureView.forward(req, res);
+			}
+		}
+		
+			if ("updateByAjax".equals(action)) { 
+			
+			List<String> errorMsgs = new LinkedList<String>();
+			// Store this set in the request scope, in case we need to
+			// send the ErrorPage view.
+			req.setAttribute("errorMsgs", errorMsgs);
+		
+			try {
+				/***************************1.接收請求參數 - 輸入格式的錯誤處理**********************/
+				Integer prod_report_product_id = new Integer(req.getParameter("prodId").trim());
+				Integer prodStatus = new Integer(req.getParameter("prodStatus"));
+				String memId = req.getParameter("memId");
+
+				/***************************2.開始修改資料*****************************************/
+
+				ProductService prodSvc = new ProductService();
+				ProductVO prodVO = prodSvc.getOneProduct(prod_report_product_id);
+				
+				if(prodStatus==1) {
+					res.setContentType("text/html;charset=Big5");
+					PrintWriter w = res.getWriter();
+					w.print("經過審核商品沒有問題，不需下架!");
+				}else if(prodStatus==2) {
+					
+					prodVO.setProduct_status(2);//1>上架 2>下架
+					prodSvc.updateProduct(prodVO);
+					res.setContentType("text/html;charset=Big5");
+					PrintWriter w = res.getWriter();
+					w.print("經過審核商品有問題，暫時下架!");
+				}else if(prodStatus==3) {
+					
+					prodSvc.deleteProduct(prod_report_product_id);
+					res.setContentType("text/html;charset=Big5");
+					PrintWriter w = res.getWriter();
+					w.print("經過審核商品有嚴重問題，刪除商品!");
+				}
+
+				ProductReportService productReportSvc = new ProductReportService();
+				ProductReportVO productReportVO =productReportSvc.getOneProductReport(prod_report_product_id, memId);
+				productReportVO.setProd_report_status(2);//2 是已審核
+				productReportSvc.updateProductReport(productReportVO);
+				/***************************其他可能的錯誤處理*************************************/
+			} catch (Exception e) {
+				e.printStackTrace();
+				errorMsgs.add("修改資料失敗:"+e.getMessage());
+				
 			}
 		}
 		

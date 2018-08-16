@@ -1,8 +1,8 @@
-.text-truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+/* .text-truncate { */
+/*     overflow: hidden; */
+/*     text-overflow: ellipsis; */
+/*     white-space: nowrap; */
+/* } */
 
 .table {
     table-layout: fixed;
@@ -36,4 +36,22 @@
 .searchContent {
     table-layout: fixed;
     width: 100%;
+}
+.ui.borderless.menu {
+	text-align:center;
+	width :40%;
+	margin :0 auto ;
+	font-size: 1.2em;
+}
+.ui.borderless.menu .item {
+	margin:0 auto !important;
+	padding: unset !important;
+}
+.page_info {
+	text-align:center;
+	margin-top:5px;
+}
+.attractionsArea {
+	display:inline;
+	margin-left:20px;
 }

@@ -22,17 +22,20 @@ public class AdDAO implements AdDAO_interface{
 	}
 	
 	
-	
+	//新增廣告，會設定上下架時間使用的
 	private static final String ADDAD_STMT=
-			"INSERT INTO AD(AD_ID,AD_TITLE,AD_TEXT,AD_LINK,AD_PIC,AD_ACTADDTIME,AD_ACTOFFTIME,AD_STAT,CLICKCOUNT)VALUES('AD'||LPAD(TO_CHAR(AD_SEQ.NEXTVAL),6,'0'),?,?,?,?,?,?,0,0)";
+			"INSERT INTO AD(AD_ID,AD_TITLE,AD_TEXT,AD_LINK,AD_PIC,AD_PREADDTIME,AD_PREOFFTIME,AD_STAT,CLICKCOUNT)VALUES('AD'||LPAD(TO_CHAR(AD_SEQ.NEXTVAL),6,'0'),?,?,?,?,?,?,0,0)";
 	private static final String UPDATEAD_STMT=
-			"UPDATE AD SET AD_TITLE=?,AD_TEXT=?,AD_LINK=?,AD_PIC=?,AD_ACTADDTIME=?,AD_ACTOFFTIME=? WHERE AD_ID=?";
+			"UPDATE AD SET AD_TITLE=?,AD_TEXT=?,AD_LINK=?,AD_PIC=?,AD_PREADDTIME=?,AD_PREOFFTIME=? WHERE AD_ID=?";
 	private static final String DELAD_STMT=
 			"DELETE FROM AD WHERE AD_ID=?";
+	/***更動廣告為馬上上架***/
 	private static final String UPDATE_ADONSTAT_STMT=
-			"UPDATE AD SET AD_STAT=1,AD_ACTADDTIME=SYSDATE WHERE AD_ID=?";
+			"UPDATE AD SET AD_STAT=1,AD_PREADDTIME=SYSDATE,AD_ACTADDTIME=SYSDATE,AD_PREOFFTIME=?,AD_ACTOFFTIME=? WHERE AD_ID=?";
+	/***更動廣告為馬上下架***/
 	private static final String UPDATE_ADOFFSTAT_STMT=
-			"UPDATE AD SET AD_STAT=0,AD_ACTOFFTIME=SYSDATE WHERE AD_ID=?";
+			"UPDATE AD SET AD_STAT=0,AD_PREOFFTIME=SYSDATE,AD_ACTOFFTIME=SYSDATE WHERE AD_ID=?";
+	
 	private static final String UPDATE_CLICK_STMT=
 			"UPDATE AD SET CLICKCOUNT=CLICKCOUNT+1 WHERE AD_ID=?";
 	private static final String FINDNEW_STMT=
@@ -40,7 +43,7 @@ public class AdDAO implements AdDAO_interface{
 	private static final String FINDHOT_STMT=
 			"SELECT * FROM AD WHERE AD_STAT=1 ORDER BY CLICKCOUNT DESC";
 	private static final String FINDALL_STMT=
-			"SELECT * FROM AD ORDER BY AD_ID DESC";
+			"SELECT * FROM AD ORDER BY AD_PREADDTIME DESC";
 	private static final String FINDONE_BYID=
 			"SELECT * FROM AD WHERE AD_ID=?";
 	
@@ -55,16 +58,16 @@ public class AdDAO implements AdDAO_interface{
 			
 			con=ds.getConnection();
 			pstmt=con.prepareStatement(ADDAD_STMT);
-			
+
 			pstmt.setString(1,ad.getAd_Title());
 			pstmt.setString(2,ad.getAd_Text());
 			pstmt.setString(3,ad.getAd_Link());
 			pstmt.setBytes(4,ad.getAd_Pic());
-			pstmt.setTimestamp(5, ad.getAd_ActAddTime());
-			pstmt.setTimestamp(6, ad.getAd_ActOffTime());
-			
+			pstmt.setTimestamp(5, ad.getAd_PreAddTime());
+			pstmt.setTimestamp(6, ad.getAd_PreOffTime());
+
 			count=pstmt.executeUpdate();
-			
+
 		}catch(SQLException se) {
 			throw new RuntimeException("資料庫發生錯誤"+se.getMessage());
 		}finally {
@@ -104,8 +107,8 @@ public class AdDAO implements AdDAO_interface{
 			pstmt.setString(2,ad.getAd_Text());
 			pstmt.setString(3,ad.getAd_Link());
 			pstmt.setBytes(4,ad.getAd_Pic());
-			pstmt.setTimestamp(5, ad.getAd_ActAddTime());
-			pstmt.setTimestamp(6, ad.getAd_ActOffTime());
+			pstmt.setTimestamp(5, ad.getAd_PreAddTime());
+			pstmt.setTimestamp(6, ad.getAd_PreOffTime());
 			pstmt.setString(7,ad.getAd_ID());
 			
 			count=pstmt.executeUpdate();
@@ -136,18 +139,37 @@ public class AdDAO implements AdDAO_interface{
 	
 	//修改廣告狀態(上架/下架也會更新實際上下架時間)
 	@Override
-	public int updateAD(String id,Integer stat) {
+	public int updateAD(String id,Integer stat,AdVO advo) {
 		int count=0;
 		Connection con = null ;
 		PreparedStatement pstmt= null;
 		
-		if(stat == 0) {
+		if(stat == 1) {
 			try {
 				con=ds.getConnection();
 				pstmt=con.prepareStatement(UPDATE_ADONSTAT_STMT);
 				
-				pstmt.setString(1,id);
 				
+				if(advo.getAd_PreOffTime() !=null) {
+					//假設上架時間大於原有預計下架時間時，把預計下架時間跟實際下架時間清空
+					if(System.currentTimeMillis() >= advo.getAd_PreOffTime().getTime() ) {
+						pstmt.setTimestamp(1,null);
+						pstmt.setTimestamp(2,null);
+						pstmt.setString(3,id);
+					}else {
+						pstmt.setTimestamp(1,advo.getAd_PreOffTime());
+						pstmt.setTimestamp(2,null);
+						pstmt.setString(3,id);
+					}
+				}else {
+					pstmt.setTimestamp(1,advo.getAd_PreOffTime());
+					pstmt.setTimestamp(2,null);
+					pstmt.setString(3,id);
+					
+				}
+
+
+
 				count=pstmt.executeUpdate();
 				
 			}catch(SQLException se) {
@@ -170,9 +192,8 @@ public class AdDAO implements AdDAO_interface{
 				}
 			}
 			
-		}else if(stat == 1) {		
+		}else if(stat == 0) {		
 			try {
-
 				con=ds.getConnection();
 				pstmt=con.prepareStatement(UPDATE_ADOFFSTAT_STMT);
 				
@@ -410,6 +431,8 @@ public class AdDAO implements AdDAO_interface{
 				ad.setAd_Text(rs.getString("AD_TEXT"));
 				ad.setAd_Link(rs.getString("AD_LINK"));
 				ad.setAd_Pic(rs.getBytes("AD_PIC"));
+				ad.setAd_PreAddTime(rs.getTimestamp("AD_PREADDTIME"));
+				ad.setAd_PreOffTime(rs.getTimestamp("AD_PREOFFTIME"));
 				ad.setAd_ActAddTime(rs.getTimestamp("AD_ACTADDTIME"));
 				ad.setAd_ActOffTime(rs.getTimestamp("AD_ACTOFFTIME"));
 				ad.setAd_Stat(rs.getInt("AD_STAT"));
@@ -466,6 +489,12 @@ public class AdDAO implements AdDAO_interface{
 				ad.setAd_Text(rs.getString("AD_TEXT"));
 				ad.setAd_Link(rs.getString("AD_LINK"));
 				ad.setAd_Pic(rs.getBytes("AD_PIC"));
+				ad.setAd_PreAddTime(rs.getTimestamp("AD_PREADDTIME"));
+				ad.setAd_PreOffTime(rs.getTimestamp("AD_PREOFFTIME"));
+				ad.setAd_ActAddTime(rs.getTimestamp("AD_ACTADDTIME"));
+				ad.setAd_ActOffTime(rs.getTimestamp("AD_ACTOFFTIME"));
+				ad.setAd_Stat(rs.getInt("AD_STAT"));
+				ad.setClickCount(rs.getInt("CLICKCOUNT"));
 			}
 		}catch(SQLException se) {
 			throw new RuntimeException("資料庫發生錯誤"+se.getMessage());

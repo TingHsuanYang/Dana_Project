@@ -15,16 +15,16 @@ public class blogVO implements java.io.Serializable {
 	private Integer blog_views;
 	private Integer blog_status;
 
+	public blogVO() {
+	
+	}
+
 	public Integer getBlog_status() {
 		return blog_status;
 	}
 
 	public void setBlog_status(Integer blog_status) {
 		this.blog_status = blog_status;
-	}
-
-	public blogVO() {
-
 	}
 
 	public String getBlog_id() {

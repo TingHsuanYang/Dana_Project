@@ -11,36 +11,39 @@ public class AdService {
 	}
 	
 	//新增廣告
-	public AdVO addAD(String title,String text,String link,byte[] pic) {
+	public AdVO addAD(String title,String text,String link,byte[] pic,Timestamp ad_PreAddTime,Timestamp ad_PreOffTime) {
 		AdVO advo=new AdVO();
-		
+
 		advo.setAd_Title(title);
 		advo.setAd_Text(text);
 		advo.setAd_Link(link);
 		advo.setAd_Pic(pic);
+		advo.setAd_PreAddTime(ad_PreAddTime);
+		advo.setAd_PreOffTime(ad_PreOffTime);
 		dao.addAD(advo);
-		
+
 		return advo; 
 	}
 	
 	//修改廣告(必須是下架狀態)
-	public AdVO updateAD(String id,String title,String text,String link,byte[] pic) {
+	public AdVO updateAD(String id,String title,String text,String link,byte[] pic,Timestamp ad_PreAddTime,Timestamp ad_PreOffTime) {
 		AdVO advo = new AdVO();
 		advo.setAd_ID(id);
 		advo.setAd_Title(title);
 		advo.setAd_Text(text);
 		advo.setAd_Link(link);
 		advo.setAd_Pic(pic);
+		advo.setAd_PreAddTime(ad_PreAddTime);
+		advo.setAd_PreOffTime(ad_PreOffTime);
 
-		
 		dao.updateAD(advo);
 		
 		return advo;
 	}
 	
 	//修改廣告狀態(上下架更新實際上下架時間)
-	public void updateAD(String id,Integer stat) {
-		dao.updateAD(id, stat);
+	public void updateAD(String id,Integer stat,AdVO advo) {
+		dao.updateAD(id, stat,advo);
 	}
 	
 	//修改廣告點擊率

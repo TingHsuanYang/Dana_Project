@@ -11,7 +11,7 @@ public interface AdDAO_interface {
 	int updateAD(AdVO ad);
 	
 	//修改廣告狀態(上架/下架也會更新實際上下架時間)
-	int updateAD(String id,Integer stat);
+	int updateAD(String id,Integer stat,AdVO advo);
 	
 	//修改廣告點擊率
 	int updateAD_Click(String id);

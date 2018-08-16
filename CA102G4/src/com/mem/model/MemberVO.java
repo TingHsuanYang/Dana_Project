@@ -22,6 +22,10 @@ public class MemberVO implements java.io.Serializable {
 	
 	private Integer mem_State;
 	
+	private String mem_Activecode;
+	
+	
+
 	private String Delivery_Address_1;
 	private String Delivery_Address_2;
 	private String Delivery_Address_3;
@@ -38,6 +42,26 @@ public class MemberVO implements java.io.Serializable {
 	private Integer STORE_NO_2;
 	private Integer STORE_NO_3;
 	
+	private Date mem_Reg_Date;
+	
+	public Date getMem_Reg_Date() {
+		return mem_Reg_Date;
+	}
+
+	public void setMem_Reg_Date(Date mem_Reg_Date) {
+		this.mem_Reg_Date = mem_Reg_Date;
+	}
+
+	private String encoded; 
+	
+	public String getEncoded() {
+		return encoded;
+	}
+
+	public void setEncoded(String encoded) {
+		this.encoded = encoded;
+	}
+
 	public MemberVO(){}
 
 	public String getMem_Id() {
@@ -126,6 +150,14 @@ public class MemberVO implements java.io.Serializable {
 
 	public void setMem_State(Integer mem_State) {
 		this.mem_State = mem_State;
+	}
+	
+	public String getMem_Activecode() {
+		return mem_Activecode;
+	}
+
+	public void setMem_Activecode(String mem_Activecode) {
+		this.mem_Activecode = mem_Activecode;
 	}
 
 	public String getDelivery_Address_1() {

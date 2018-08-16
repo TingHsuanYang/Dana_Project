@@ -8,9 +8,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.productCategory.model.ProductCategoryVO;
+
+import jdbc.util.CompositeQuery.jdbcUtil_CompositeQuery_Product;
 
 public class ProductJDBCDAO implements ProductDAO_interface{
 	private static final String DRIVER = "oracle.jdbc.driver.OracleDriver";
@@ -411,6 +414,78 @@ public class ProductJDBCDAO implements ProductDAO_interface{
 			}
 		}
 		return set;
+	}
+
+	@Override
+	public List<ProductVO> getAll(Map<String, String[]> map) {
+		List<ProductVO> list = new ArrayList<ProductVO>();
+		ProductVO productVO = null;
+	
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+	
+		try {
+			
+			Class.forName(DRIVER);
+			con = DriverManager.getConnection(URL, USER, PASSWORD);
+			String finalSQL = "select * from product "
+		          + jdbcUtil_CompositeQuery_Product.get_WhereCondition(map);
+			pstmt = con.prepareStatement(finalSQL);
+			System.out.println("●●finalSQL(by DAO) = "+finalSQL);
+			rs = pstmt.executeQuery();
+	
+			while (rs.next()) {
+				productVO = new ProductVO();
+		
+				productVO.setProduct_id(rs.getInt("PRODUCT_ID"));
+				productVO.setProduct_category_id(rs.getInt("PRODUCT_CATEGORY_ID"));
+				productVO.setProduct_mem_id(rs.getString("PRODUCT_MEM_ID"));
+				productVO.setProduct_name(rs.getString("PRODUCT_NAME"));
+				productVO.setProduct_price(rs.getInt("PRODUCT_PRICE"));
+				productVO.setProduct_descr(rs.getString("PRODUCT_DESCR"));
+				productVO.setProduct_stock(rs.getInt("PRODUCT_STOCK"));
+				productVO.setProduct_status(rs.getInt("PRODUCT_STATUS"));
+				productVO.setProduct_date(rs.getTimestamp("PRODUCT_DATE"));
+				productVO.setProduct_photo_1(rs.getBytes("PRODUCT_PHOTO_1"));
+				productVO.setProduct_photo_2(rs.getBytes("PRODUCT_PHOTO_2"));
+				productVO.setProduct_photo_3(rs.getBytes("PRODUCT_PHOTO_3"));
+				productVO.setProduct_photo_4(rs.getBytes("PRODUCT_PHOTO_4"));
+				productVO.setProduct_photo_5(rs.getBytes("PRODUCT_PHOTO_5"));
+				list.add(productVO); // Store the row in the List
+			}
+	
+			// Handle any SQL errors
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException("Couldn't load database driver. "
+					+ e.getMessage());
+		} catch (SQLException se) {
+			throw new RuntimeException("A database error occured. "
+					+ se.getMessage());
+		} finally {
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException se) {
+					se.printStackTrace(System.err);
+				}
+			}
+			if (pstmt != null) {
+				try {
+					pstmt.close();
+				} catch (SQLException se) {
+					se.printStackTrace(System.err);
+				}
+			}
+			if (con != null) {
+				try {
+					con.close();
+				} catch (Exception e) {
+					e.printStackTrace(System.err);
+				}
+			}
+		}
+		return list;
 	}
 
 }

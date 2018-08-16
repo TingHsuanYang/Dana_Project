@@ -1,7 +1,27 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page import="com.ad.model.*" %>
-<%
+<%@ page import="com.admin.model.*"%>
+<% 
+	//**********************管理者登入身分驗證********************************//
+	AdminVO adminVO = (AdminVO)session.getAttribute("adminVO");
+	if(adminVO == null){
+		adminVO = (AdminVO)session.getAttribute("adminVO");
+	}
+	
+	boolean login_state_backEnd = false;
+	Object login_state_temp = session.getAttribute("login_state_backEnd");
+	if(login_state_temp!=null){
+		login_state_backEnd=(boolean)login_state_temp;
+	}
+	
+	if(login_state_backEnd!=true){
+		session.setAttribute("location_Backend",request.getRequestURI());
+		response.sendRedirect(request.getContextPath()+"/back_end/admin/back_login.jsp");
+		return;
+	}
+	//**********************管理者登入身分驗證********************************//
+
 	AdVO advo=(AdVO) request.getAttribute("adVO");
 %>
 
@@ -11,6 +31,9 @@
     <head>
         <title>Travel Maker 後台 </title>
         <meta charset="UTF-8">
+        
+
+        
         <!-- Bootstrap CSS v3.3.4 -->
         <link rel="stylesheet" href="<%=request.getContextPath()%>/back_end/css/all/bootstrap.css">
 
@@ -35,21 +58,24 @@
         <link href='https://fonts.googleapis.com/css?family=Pacifico' rel='stylesheet' type='text/css'>
         <!-- //font字體 -->
         
-        <style>
+	 <style>
         	.breadcrumb {
         		font-size:2em;
         		background-color:inherit;
         	}
         	
-        	table{
+        	.row table{
         		margin-left:20px;
         	}
-        	tr{
+        	.row tr{
         		height:60px;
         	}
         	
-        	th{
+        	.row th{
         		font-size:1em;
+        	}
+        	.row th > span{
+        		color:red;
         	}
         	
         	input[type="text"]{
@@ -66,7 +92,33 @@
 			
         	
         </style>
+		
 
+		
+		<!-- 日期時間選擇 -->
+		<link rel="stylesheet" href="<%=request.getContextPath()%>/back_end/css/ad/jquery.datetimepicker.css">
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.full.min.js"></script>
+		
+		<script>
+
+		$(document).ready(function(){			
+			$('#datetimepicker_AddTime').datetimepicker({
+// 				value:new Date(),
+				format:'Y-m-d H:i:00',
+// 				theme:'dark',
+				minDate:0,
+				minTime:0,
+				step:5,
+			});
+			$('#datetimepicker_OffTime').datetimepicker({
+				format:'Y-m-d H:i:00',
+				minDate:0,
+				minTime:0,
+				step:15,		
+			});	
+		});
+			
+		</script>
     </head>
     <body>
         <div class="wrapper">
@@ -80,110 +132,91 @@
                 <ul class="list-unstyled components">
                     <li class="active">
                         <a href="<%=request.getContextPath()%>/back_end/back_index.jsp">
-                            <i class="fas fa-home"></i>
-                            回首頁
+                            <i class="fas fa-home"></i> 回首頁
                         </a>
                     </li>
                     
                     <li>
                         <li class="dropdown">
                             <a href="#auth_Submenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
-                                <i class="fas fa-users"></i>
-                                權限管理
+                                <i class="fas fa-users"></i>權限管理
                             </a>
 
                             <ul class="dropdown-menu" id="auth_Submenu">
                                 <li>
-                                    <a href="#">管理員</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/admin/manager_admin.jsp">管理員</a>
                                 </li>
                                 <li>
-                                    <a href="#">會員</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/admin/manager_member.jsp">會員</a>
                                 </li>
                             </ul>
 
                         </li>
                         
                         <li>
-                            <a href="#">
-                                <i class="fas fa-newspaper"></i>
-                                最新消息管理
+                            <a href="<%=request.getContextPath()%>/back_end/news/news.jsp">
+                                <i class="fas fa-newspaper"></i>最新消息管理
                             </a>
                         </li>
                         
                         <li>
-                            <a href="#">
-                                <i class="fas fa-image"></i>
-                                景點管理
+                            <a href="<%=request.getContextPath()%>/back_end/attEdit/back_attEdit.jsp">
+                                <i class="fas fa-image"></i>景點管理
                             </a>
                         </li>
                        
                         <li class="dropdown">
                             <a href="#category_Submenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
-                                <i class="fas fa-tag"></i>
-                                標籤管理
+                                <i class="fas fa-tag"></i>標籤管理
                             </a>
                             <ul class="dropdown-menu" id="category_Submenu">
                                 <li>
-                                    <a href="Back_TagBlog.html">旅遊記</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/blog/blog_tag.jsp">旅遊記</a>
                                 </li>
                                 <li>
-                                    <a href="#">問答區</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/qa_list/qa_list.jsp">問答區</a>
                                 </li>
                             </ul>
                         </li>
                         
                         <li class="dropdown">
                             <a href="#report_Submenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle" aria-haspopup="true" >
-                                <i class="fas fa-comment-dots"></i>
-                                檢舉管理
+                                <i class="fas fa-comment-dots"></i>檢舉管理
                             </a>
                             <ul class="dropdown-menu" id="report_Submenu">
                                 <li>
-                                    <a href="#">會員檢舉</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/member/member_report.jsp">會員檢舉</a>
                                 </li>
                                 <li>
-                                    <a href="Back_ReportBlog.html">旅遊記檢舉</a>
+                                    <a href="<%=request.getContextPath()%>/blog.do?action=blogReportManage">旅遊記檢舉</a>
                                 </li>
                                 <li>
-                                    <a href="#">問答區檢舉</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/qa_report/qa_report.jsp">問答區檢舉</a>
                                 </li>
                                 <li>
-                                    <a href="#">照片牆檢舉</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/photo_wall/photo_report.jsp">照片牆檢舉</a>
                                 </li>
                                 <li>
-                                    <a href="#">揪團檢舉</a>
-                                </li>
-                                <li>
-                                    <a href="#">商品檢舉</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/store/product_report.jsp">商品檢舉</a>
                                 </li>
                             </ul>
-                        </li>
-                        
-                        <li>
-                            <a href="#">
-                                <i class="fas fa-shopping-cart"></i>
-                                交易款項管理
-                            </a>
-                        </li>
-                        
+                        </li>                        
                         <li>
                             <a href="<%=request.getContextPath()%>/back_end/ad/back_ad.jsp">
-                                <i class="fas fa-audio-description"></i>
-                                專欄廣告管理
+                                <i class="fas fa-audio-description"></i>專欄廣告管理
                             </a>
                         </li>
                         
                         <li class="dropdown">
                             <a href="#aboutUS_Submenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
-                                <i class="fas fa-briefcase"></i>
-                                關於我們管理
+                                <i class="fas fa-briefcase"></i>關於我們管理
                                 </a>
                             <ul class="dropdown-menu" id="aboutUS_Submenu">
                                 <li>
-                                    <a href="#">關於我們</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/about_us/about_us.jsp">關於我們</a>
                                 </li>
                                 <li>
-                                    <a href="#">FAQ</a>
+                                    <a href="<%=request.getContextPath()%>/back_end/faq/faq.jsp">FAQ</a>
                                 </li>
                             </ul>
                         </li>
@@ -203,9 +236,15 @@
                             <i class="fas fa-align-left"></i>
                         </button>
                         <span style="float: right">
-                        <button type="button" class="btn btn-info" onclick="location.href='Back_Login.html'">登出
-                            <i class="fas fa-sign-out-alt"></i>
-                        </button>
+                        	<span style="font-size:1.5em;margin-right:10px;vertical-align:sub;">Welcome！${adminVO.admin_Name}</span>
+	                        <c:choose>
+	                          <c:when test="<%=login_state_backEnd %>">
+	                           <a href="<%= request.getContextPath()%>/admin.do?action=logout"><span class=" top_banner btn btn-info"><i class=" fas fa-sign-out-alt" aria-hidden="true"></i></span></a>
+	                          </c:when>
+	                          <c:otherwise>
+	                           <a href="<%= request.getContextPath()%>/admin_login.jsp"><span class="top_banner btn btn-info"><i class=" fa fa-user" aria-hidden="true"></i></span></a>
+	                          </c:otherwise>
+	                        </c:choose>
                         </span>
                     </div>
                 </nav>
@@ -223,31 +262,43 @@
                 
                 
                 <div class="row">
-                	<div class="col-lg-4">
+                	<div class="col-lg-4" style="position: static;">
 					<form method="post" action="<%=request.getContextPath()%>/ad.do" name="form1" enctype="multipart/form-data">
 						<table>
 							<tr>
-								<th>廣告標題：</th>
+								<th><span>*</span>廣告標題：</th>
 								<td>
-									<input type="text" name="ad_Title" class="form-control" value="<%=(advo == null ) ? "" : advo.getAd_Title() %>"/>
+									<input type="text" name="ad_Title" class="form-control" value="<%=(advo == null ) ? "" : advo.getAd_Title() %>" required/>
 								</td>
 							</tr>
 							<tr>
-								<th>廣告簡介：</th>
+								<th><span>*</span>廣告簡介：</th>
 								<td>
-									<textarea name="ad_Text" rows="5" cols="50" class="form-control"><%=(advo == null) ? "" : advo.getAd_Text() %></textarea>
+									<textarea name="ad_Text" rows="5" cols="50" class="form-control" required><%=(advo == null) ? "" : advo.getAd_Text() %></textarea>
 								</td>
 							</tr>
 							<tr>
-								<th>廣告連結：</th>
+								<th><span>*</span>廣告連結：</th>
 								<td>
-									<input type="text" name="ad_Link" class="form-control" value="<%=(advo == null) ? "":advo.getAd_Link() %>"/>
+									<input type="text" name="ad_Link" class="form-control" value="<%=(advo == null) ? "":advo.getAd_Link() %>" required/>
 								</td>
 							</tr>
 							<tr>
-								<th>廣告圖片：</th>
+								<th><span>*</span>廣告圖片：</th>
 								<td>
-									<input type="file" name="ad_Pic" accept="image/*">
+									<input type="file" name="ad_Pic" accept="image/*" required>
+								</td>
+							</tr>
+							<tr>
+								<th><span>*</span>預計上架時間：</th>
+								<td>
+									<input type="text" id="datetimepicker_AddTime"  name="ad_PreAddTime" readonly>
+								</td>
+							</tr>
+							<tr>
+								<th>預計下架時間：</th>
+								<td>
+									<input type="text" id="datetimepicker_OffTime"  name="ad_PreOffTime" readonly>
 								</td>
 							</tr>
 							<tr>
@@ -290,10 +341,15 @@
                 
             </div>
         </div>
-           <script type="text/javascript">
-            /*若有錯誤訊息時，就會跳出視窗.......*/
+
+
+		<script type="text/javascript">
+
+						
+			/*若有錯誤訊息時，就會跳出視窗.......*/
            	$('#errorModal').modal();
         	
+            
             /*為了圖片的顯示................*/
             function $id(id){
         		return document.getElementById(id);
@@ -318,8 +374,9 @@
        	        }else{
        	            parent.removeChild(child); //必須藉由父節點才能刪除底下的子節點
        	        }
-       	    }
-        	
+       	    } 
+ 
         </script>
+
     </body>
 </html>

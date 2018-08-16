@@ -9,14 +9,12 @@ public class blogTagService {
 		dao = new blog_tagDAO();
 	}
 
-	public blog_tagVO addBlogTag(String blog_id, String btn_id) {
+	public void addBlogTag(String blog_id, String btn_id) {
 		blog_tagVO blog_tagVO = new blog_tagVO();
 
 		blog_tagVO.setBlog_id(blog_id);
 		blog_tagVO.setBtn_id(btn_id);
 		dao.insert(blog_tagVO);
-
-		return blog_tagVO;
 	}
 
 	public void deleteBlogTagOne(String blog_id, String btn_id) {
@@ -32,7 +30,15 @@ public class blogTagService {
 		dao.deleteAll(blog_id);
 	}
 
-	public List<blog_tagVO> getAllByABLOG(String blog_id) {
+	public List<blog_tagVO> getAllByABlog(String blog_id) {
 		return dao.getAllByABlog(blog_id);
+	}
+	
+	public List<blog_tagVO> getAll() {
+		return dao.getAll();
+	}
+	
+	public void deleteAllByBtnID(String btn_id) {
+		dao.deleteAllByBtnID(btn_id);
 	}
 }

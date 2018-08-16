@@ -8,6 +8,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.orderDetails.model.OrderDetailsDAO;
+import com.orderDetails.model.OrderDetailsVO;
+
 public class OrdJDBCDAO implements OrdDAO_interface {
 	private static final String DRIVER = "oracle.jdbc.driver.OracleDriver";
 	private static final String URL = "jdbc:oracle:thin:@localhost:1521:xe";
@@ -51,6 +54,11 @@ public class OrdJDBCDAO implements OrdDAO_interface {
 			+ "SHIPMENT_STATUS,ORDER_DATE,ORDER_STATUS,ORDER_TOTAL,ORDER_ITEM,CANCEL_REASON,STOB_RATING,"
 			+ "STOB_RATING_DESCR,BTOS_RATING,BTOS_RATING_DESCR,SHIPMENT_ID,SHIPMENT_METHOD,ORD_STORE_711_NAME"
 			+ " FROM ORD where SELLER_MEM_ID = ? order by ORDER_ID";
+	
+	private static final String GET_RATING_BY_SELLERID ="SELECT AVG(DISTINCT 'BTOS_RATING') AS \"Avg Rating\" FROM product where SELLER_MEM_ID = ?";
+	private static final String GET_RATING_BY_BUYERID ="SELECT AVG(DISTINCT 'STOB_RATING') AS \"Avg Rating\" FROM product where BUYER_MEM_ID = ?";
+	
+	
 	
 	public static void setIntOrNull(PreparedStatement ps, int column, Integer value) {
 		if (value != null) {
@@ -330,7 +338,7 @@ public class OrdJDBCDAO implements OrdDAO_interface {
 	}
 
 	@Override
-	public List<OrdVO> getOneForAllBuy(String buyer_mem_id) {
+	public List<OrdVO> getForAllBuy(String buyer_mem_id) {
 		List<OrdVO> listAllBuy = new ArrayList<OrdVO>();
 		OrdVO ordVO = null;
 
@@ -413,7 +421,7 @@ public class OrdJDBCDAO implements OrdDAO_interface {
 	}
 
 	@Override
-	public List<OrdVO> getOneForAllSell(String seller_mem_id) {
+	public List<OrdVO> getForAllSell(String seller_mem_id) {
 		List<OrdVO> listAllSell = new ArrayList<OrdVO>();
 		OrdVO ordVO = null;
 
@@ -492,6 +500,210 @@ public class OrdJDBCDAO implements OrdDAO_interface {
 		}
 		
 		return listAllSell;
+	}
+
+	@Override
+	public void insertWithOrderDetails(OrdVO ordVO, List<OrderDetailsVO> list) {
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		
+		try{
+			
+			Class.forName(DRIVER);
+			con = DriverManager.getConnection(URL, USER, PASSWORD);
+
+			pstmt = con.prepareStatement(INSERT_STMT);
+			
+			// 1●設定於 pstm.executeUpdate()之前
+    		con.setAutoCommit(false);
+    		
+    		// 先新增訂單
+    		String cols[] = {"ORDER_ID"};
+			pstmt = con.prepareStatement(INSERT_STMT , cols);
+			pstmt.setString(1, ordVO.getBuyer_mem_id());
+			pstmt.setString(2, ordVO.getSeller_mem_id());
+			pstmt.setString(3, ordVO.getOrder_address());
+			pstmt.setInt(4, ordVO.getPayment_status());
+			pstmt.setInt(5, ordVO.getPayment_method());
+			pstmt.setInt(6, ordVO.getShipment_status());
+			pstmt.setTimestamp(7, ordVO.getOrder_date());
+			pstmt.setInt(8, ordVO.getOrder_status());
+			pstmt.setInt(9, ordVO.getOrder_total());
+			pstmt.setInt(10, ordVO.getOrder_item());
+			pstmt.setInt(11, ordVO.getShipment_method());
+			pstmt.setString(12, ordVO.getOrd_store_711_name());
+			pstmt.executeUpdate();
+			
+			//掘取對應的自增主鍵值
+			String next_order_id = null;
+			ResultSet rs = pstmt.getGeneratedKeys();
+			if (rs.next()) {
+				next_order_id = rs.getString(1);
+				System.out.println("自增主鍵值= " + next_order_id +"(剛新增成功的訂單編號)");
+			} else {
+				System.out.println("未取得自增主鍵值");
+			}
+			rs.close();
+			
+			// 再同時新增訂單明細
+			OrderDetailsDAO dao = new OrderDetailsDAO();
+			System.out.println("list.size()-A="+list.size());
+			for (OrderDetailsVO orderDetail : list) {
+				orderDetail.setDetails_order_id(next_order_id);
+				dao.insert2(orderDetail,con);
+			}
+			
+			// 2●設定於 pstm.executeUpdate()之後
+			con.commit();
+			con.setAutoCommit(true);
+			System.out.println("list.size()-B="+list.size());
+			System.out.println("新增訂單編號" + next_order_id + "時,共有訂單明細" + list.size()
+					+ "個同時被新增");
+						
+		// Handle any driver errors
+		}catch (SQLException se) {
+			if (con != null) {
+				try {
+					// 3●設定於當有exception發生時之catch區塊內
+					System.err.print("Transaction is being ");
+					System.err.println("rolled back-由-dept");
+					con.rollback();
+				} catch (SQLException excep) {
+					throw new RuntimeException("rollback error occured. "
+							+ excep.getMessage());
+				}
+			}
+			throw new RuntimeException("A database error occured. "
+					+ se.getMessage());
+			// Clean up JDBC resources
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException("Couldn't load database driver. "
+					+ e.getMessage());
+		} finally {
+			if (pstmt != null) {
+				try {
+					pstmt.close();
+				} catch (SQLException se) {
+					se.printStackTrace(System.err);
+				}
+			}
+			if (con != null) {
+				try {
+					con.close();
+				} catch (Exception e) {
+					e.printStackTrace(System.err);
+				}
+			}
+		}
+		
+	}
+
+	@Override
+	public int getRatingBySellerId(String seller_mem_id) {
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		Integer avgRating = null;
+		try {
+
+			Class.forName(DRIVER);
+			con = DriverManager.getConnection(URL, USER, PASSWORD);
+			pstmt = con.prepareStatement(GET_RATING_BY_SELLERID);
+
+			pstmt.setString(1, seller_mem_id);
+
+			rs = pstmt.executeQuery();
+
+			while (rs.next()) {
+				avgRating = rs.getInt(1);			
+			}
+
+			// Handle any driver errors
+		} catch (SQLException se) {
+			throw new RuntimeException("A database error occured. " + se.getMessage());
+			// Clean up JDBC resources
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException("Couldn't load database driver. "
+					+ e.getMessage());
+		}finally {
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException se) {
+					se.printStackTrace(System.err);
+				}
+			}
+			if (pstmt != null) {
+				try {
+					pstmt.close();
+				} catch (SQLException se) {
+					se.printStackTrace(System.err);
+				}
+			}
+			if (con != null) {
+				try {
+					con.close();
+				} catch (Exception e) {
+					e.printStackTrace(System.err);
+				}
+			}
+		}
+		return avgRating;
+	}
+
+	@Override
+	public int getRatingByBuyerId(String buyer_mem_id) {
+
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		Integer avgRating = null;
+		try {
+
+			Class.forName(DRIVER);
+			con = DriverManager.getConnection(URL, USER, PASSWORD);
+
+			pstmt = con.prepareStatement(GET_RATING_BY_BUYERID);
+
+			pstmt.setString(1, buyer_mem_id);
+
+			rs = pstmt.executeQuery();
+
+			while (rs.next()) {
+				avgRating = rs.getInt(1);			
+			}
+
+			// Handle any driver errors
+		} catch (SQLException se) {
+			throw new RuntimeException("A database error occured. " + se.getMessage());
+			// Clean up JDBC resources
+		}catch (ClassNotFoundException e) {
+			throw new RuntimeException("Couldn't load database driver. "
+					+ e.getMessage());
+		} finally {
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (SQLException se) {
+					se.printStackTrace(System.err);
+				}
+			}
+			if (pstmt != null) {
+				try {
+					pstmt.close();
+				} catch (SQLException se) {
+					se.printStackTrace(System.err);
+				}
+			}
+			if (con != null) {
+				try {
+					con.close();
+				} catch (Exception e) {
+					e.printStackTrace(System.err);
+				}
+			}
+		}
+		return avgRating;
 	}
 
 }

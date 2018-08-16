@@ -37,4 +37,12 @@ public class blogTagNameService {
 	public List<blog_tag_nameVO> getAllBytagClass(String keyword) {
 		return dao.getAllBytagClass(keyword);
 	}
+	
+	public List<blog_tag_nameVO> getAll() {
+		return dao.getAll();
+	}
+	
+	public blog_tag_nameVO findByBtn_id(String btn_id) {
+		return dao.findByBtn_id(btn_id);
+	}
 }

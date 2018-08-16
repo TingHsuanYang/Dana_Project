@@ -1,23 +1,35 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ page import="com.mem.model.*"%>
+<%@ page import="com.grp.model.*"%>
+
 <html>
+
 <%
+// 	MemberVO memberVO = (MemberVO) session.getAttribute("memberVO"); 
 
 	boolean login_state = false;
 	Object login_state_temp = session.getAttribute("login_state");
-	
 	if(login_state_temp!=null){
 		login_state=(boolean)login_state_temp;
 	}
 	
-	if(login_state==true){
-		response.sendRedirect(request.getContextPath()+"/front_end/index.jsp");
-	}
+// 	String mem_Id = memberVO.getMem_Id();
 
-
-
+// 	String grp_Id = request.getParameter("grp_Id");	
+	
+// 	GrpService grpsvc = new GrpService();
+// 	GrpVO grpVO = grpsvc.findByPrimaryKey(grp_Id);
+// 	pageContext.setAttribute("grpVO", grpVO);
+	
+// 	System.out.println("mem_Id="+mem_Id);
+	
+// 	System.out.println("grp_Id="+grp_Id);
+		
+// 	System.out.println("grpVO="+grpVO);
+	
 %>
+
 <head>
     <title>Travel Maker</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -166,16 +178,15 @@ margin:80px auto;
                         <!-- Collect the nav links, forms, and other content for toggling -->
                         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                             <ul class="nav navbar-nav">
-                                <li><a href="news.html">最新消息</a></li>
-                                <li><a href="tour.html">景點介紹</a></li>
-                                <li><a href="plan.html">行程規劃</a></li>
-                                <li><a href="blog.html">旅遊記</a></li>
-                                <li><a href="ask.html">問答區</a></li>
-                                <li><a href="galley.html">照片牆</a></li>
-                                <li><a href="chat.html">聊天室</a></li>
-                                <li><a href="together.html">揪團</a></li>
-                                <li><a href="buy.html">交易平台</a></li>
-                                <li><a href="advertisement.html">專欄</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/news/news.jsp">最新消息</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/attractions/att.jsp">景點介紹</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/trip/trip.jsp">行程規劃</a></li>
+                                <li><a href="<%=request.getContextPath()%>/blog.index">旅遊記</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/question/question.jsp">問答區</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/photowall/photo_wall.jsp">照片牆</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/grp/grpIndex.jsp">揪團</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/store/store.jsp">交易平台</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/ad/ad.jsp">專欄</a></li>
 
                                 <div class="clearfix"> </div>
                             </ul>
@@ -365,7 +376,7 @@ margin:80px auto;
 
         <!-- Modal Register content-->
        <div background-color="lightblue;">
-            <form METHOD="post" ACTION="/CA102G4/front_end/member/member.do" name="form1" class="fh5co-form animate-box-modal" data-animate-effect="fadeIn" onsubmit="return chk();">
+            <form METHOD="post" ACTION="<%=request.getContextPath()%>/front_end/member/member.do" name="form1" class="fh5co-form animate-box-modal" data-animate-effect="fadeIn" onsubmit="return chk();">
                 <h2>Sign Up</h2>
 
                 <div class="form-group">
@@ -386,6 +397,7 @@ margin:80px auto;
                 </div>
 
                 <div class="form-group">
+                   
                     <label for="verification code" class="sr-only">verification code</label>
                     <input type="verification code" class="form-control" id="verification code" placeholder="verification code" autocomplete="off">
                 </div>

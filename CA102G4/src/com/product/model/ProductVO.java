@@ -12,7 +12,7 @@ public class ProductVO {
 	private String product_descr;
 	private Integer product_stock;
 	private Integer product_status;
-	private Timestamp product_date;
+	private Timestamp product_date;	
 	private byte[] product_photo_1;
 	private byte[] product_photo_2;
 	private byte[] product_photo_3;

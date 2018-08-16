@@ -103,7 +103,6 @@ h1,h2,h3,h4,h5,h6 {
 }
 
 p {
-	font-family: Montserrat-Regular;
 	font-size: 15px;
 	line-height: 1.7;
 	color: #888888;
@@ -1625,12 +1624,12 @@ li.sale-noti > a {
 
 .block2-labelsale::before {
   background-color: #e65540;
-  content: 'Sale';
+  content: '已售出';
 }
 
 .block2-labelnew::before {
-  background-color: #66a8a6;
-  content: 'New';
+  background-color: #2d2c2b;
+  content: '下架中';
 }
 
 /* ------------------------------------ */

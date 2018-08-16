@@ -93,7 +93,7 @@ public class TestordJDBCDAO {
 
 		
 		// Buyer查詢
-		List<OrdVO> list2 = dao.getOneForAllBuy("M000003");
+		List<OrdVO> list2 = dao.getForAllBuy("M000003");
 		for (OrdVO ord : list2) {
 			System.out.print(ord.getOrder_id() + ",");
 			System.out.print(ord.getBuyer_mem_id()+ ",");
@@ -121,7 +121,7 @@ public class TestordJDBCDAO {
 		
 		System.out.println("---------------------");
 		// Seller查詢
-		List<OrdVO> list3 = dao.getOneForAllSell("M000003");
+		List<OrdVO> list3 = dao.getForAllSell("M000003");
 		for (OrdVO ord : list3) {
 			System.out.print(ord.getOrder_id() + ",");
 			System.out.print(ord.getBuyer_mem_id()+ ",");

@@ -6,16 +6,39 @@
 <%@ page import="com.mem.model.*" %>
 <%
     ProductService productSvc = new ProductService();
-    List<ProductVO> list = productSvc.getAll();
+    List<ProductVO> list2 = productSvc.getAll();
+    List<ProductVO> list = new ArrayList<ProductVO>();
+    int maxPrice = 0;
+    for(int i = 0 ;i<list2.size();i++){
+    	if(list2.get(i).getProduct_status()==1){
+
+    		if(list2.get(i).getProduct_price()>maxPrice){
+    			maxPrice = list2.get(i).getProduct_price();
+    		} 
+    		list.add(list2.get(i));
+    	}
+    }
     pageContext.setAttribute("list",list);
-    
-    boolean login_state = false ;
-	Object login_state_temp = session.getAttribute("login_state");
-	
+    pageContext.setAttribute("maxPrice",maxPrice);
+
 	//確認登錄狀態
-	if(login_state_temp != null ){
-		login_state= (boolean) login_state_temp ;
+	 MemberVO memberVO = (MemberVO)session.getAttribute("memberVO");
+	String login,logout;
+	if(memberVO != null){		
+		login = "display:none;";
+		logout = "display:'';";
+	}else{
+		login = "display:'';";
+		logout = "display:none;";
+		 }
+	
+	boolean login_state = false;
+	Object login_state_temp = session.getAttribute("login_state");
+	if(login_state_temp!=null){
+		login_state=(boolean)login_state_temp;
 	}
+
+	pageContext.setAttribute("login_state",login_state);
 	
 	//若登入狀態為是true
 	/***************取出登入者會員資訊******************/
@@ -27,23 +50,65 @@
 	//為了join(寫法有servlet3.0限制)
 	MemberService memSvc = new MemberService();
 	pageContext.setAttribute("memSvc",memSvc); 
+	session.setAttribute("location", request.getRequestURI());
+	
+	//取得購物車商品數量
+	Object total_items_temp = session.getAttribute("total_items");
+	int total_items = 0;
+	if(total_items_temp != null ){
+		total_items= (Integer) total_items_temp;
+	}
+	pageContext.setAttribute("total_items",total_items);
  
 %>
 <jsp:useBean id="productWishlistSvc" scope="page" class="com.productWishlist.model.ProductWishlistService" />
 <jsp:useBean id="productCategorySvc" scope="page" class="com.productCategory.model.ProductCategoryService" />
 
+
+<%@ page import="com.fri.model.*,com.chat.model.*" %>
+<jsp:useBean id="chatRoomSvc" scope="page" class="com.chat.model.ChatRoomService"></jsp:useBean>
+<jsp:useBean id="chatRoomJoinSvc" scope="page" class="com.chat.model.ChatRoom_JoinService"></jsp:useBean>
+<jsp:useBean id="memberSvc" scope="page" class="com.mem.model.MemberService"></jsp:useBean>
+<jsp:useBean id="friSvc" scope="page" class="com.fri.model.FriendService"></jsp:useBean>
+<%
+	if(memberVO != null){
+		//*****************聊天用：取得登錄者所參與的群組聊天*************/
+		List<ChatRoom_JoinVO> myCRList =chatRoomJoinSvc.getMyChatRoom(memberVO.getMem_Id());
+		Set<ChatRoom_JoinVO> myCRGroup = new HashSet<>(); //裝著我參與的聊天對話為群組聊天時
+		
+		for(ChatRoom_JoinVO myRoom : myCRList){
+			//查詢我參與的那間聊天對話，初始人數是否大於2?? 因為這樣一定就是群組聊天
+			int initJoinCount = chatRoomSvc.getOne_ByChatRoomID(myRoom.getChatRoom_ID()).getChatRoom_InitCNT();
+			if(initJoinCount > 2){
+				myCRGroup.add(myRoom);
+			}
+		}
+		pageContext.setAttribute("myCRList", myCRGroup);
+		
+		/***************聊天用：取出會員的好友******************/
+		List<Friend> myFri = friSvc.findMyFri(memberVO.getMem_Id(),2); //互相為好友的狀態
+		pageContext.setAttribute("myFri",myFri);
+		
+		/**************避免聊天-新增群組重新整理後重複提交********/
+		session.setAttribute("addCR_token",new Date().getTime());
+
+		
+	}
+
+%>
+
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 	<head>
 		<!-- 網頁title -->
-		<title>Travle Maker</title>
+		<title>Travel Maker</title>
 		<!-- //網頁title -->
 		<!-- 指定螢幕寬度為裝置寬度，畫面載入初始縮放比例 100% -->
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<!-- //指定螢幕寬度為裝置寬度，畫面載入初始縮放比例 100% -->
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 		<!-- 設定網頁keywords -->
-		<meta name="keywords" content="TravleMaker,travlemaker,自助旅行" />
+		<meta name="keywords" content="TravelMaker,Travelmaker,自助旅行" />
 		<!-- //設定網頁keywords -->
 		<!-- 隱藏iPhone Safari位址列的網頁 -->
 		<script type="application/x-javascript">
@@ -57,6 +122,7 @@
 		</script>
 		<!-- //隱藏iPhone Safari位址列的網頁 -->
 		<!-- JQUERY -->
+		
 	    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
 	    <!-- //JQUERY -->
 	    
@@ -89,11 +155,10 @@
 		<link rel="stylesheet" type="text/css" href="<%=request.getContextPath()%>/front_end/css/store/seller_prod_mgt.css">
 		 <!-- //store 自定義的css -->
 
-	
-	    <!-- store 自定義的js -->
- 	    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-
- 	    <!-- //store 自定義的js -->
+ 	    <!-- LogoIcon -->
+	    <link href="<%=request.getContextPath()%>/front_end/images/all/Logo_Black_use.png" rel="icon" type="image/png">
+	    <!-- //LogoIcon -->
+    
 		<style>
 			#myHeader{
 				position: fixed;
@@ -103,10 +168,55 @@
 		   		right:0%; 
 			}
 			
+			.block2-img {
+				width: 270px;
+				height: 270px;
+				max-width: 100%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			
 		</style>
+		
+		<!-- 聊天相關CSS及JS -->
+		 <link href="<%=request.getContextPath()%>/front_end/css/chat/chat_style.css" rel="stylesheet" type="text/css">
+		 <script src="<%=request.getContextPath()%>/front_end/js/chat/vjUI_fileUpload.js"></script>
+		 <script src="<%=request.getContextPath()%>/front_end/js/chat/chat.js"></script>
+		 <!-- //聊天相關CSS及JS -->
+		 
+		 <!-- 登入才會有的功能(檢舉、送出或接受交友邀請通知)-->
+		 <c:if test="${memberVO != null}">
+		 		<%@ include file="/front_end/personal_area/chatModal_JS.file" %>
+		 </c:if>
+		
 	</head>
 
 	<body>
+	
+		<%-- 錯誤表列 --%>
+		<c:if test="${not empty errorMsgs_Ailee}">
+			<div class="modal fade" id="errorModal_Ailee">
+			    <div class="modal-dialog modal-sm" role="dialog">
+			      <div class="modal-content">
+			        <div class="modal-header">
+			          <i class="fas fa-exclamation-triangle"></i>
+			          <span class="modal-title"><h4>&nbsp;注意：</h4></span>
+			        </div>
+			        <div class="modal-body">
+						<c:forEach var="message" items="${errorMsgs_Ailee}">
+							<li style="color:red" type="square">${message}</li>
+						</c:forEach>
+			        </div>
+			        <div class="modal-footer">
+			          <button type="button" class="btn btn-default" data-dismiss="modal">關閉</button>
+			        </div>
+			      </div>
+			    </div>
+			 </div>
+		</c:if>
+		<%-- 錯誤表列 --%>
+	
 		<!-- banner -->
 		<div class="banner about-bg" id="myHeader">
 			<div class="top-banner about-top-banner">
@@ -117,17 +227,26 @@
 								<a href="tel:034257387"> 03-4257387</a>
 							</li>
 							<li>
-								<a href="mailto:TravleMaker@gmail.com"><i class="fa fa-envelope" aria-hidden="true"></i> TravleMaker@gmail.com</a>
+								<a href="mailto:TravelMaker@gmail.com"><i class="fa fa-envelope" aria-hidden="true"></i> TravelMaker@gmail.com</a>
 							</li>
 						</ul>
 					</div>
 					<div class="top-banner-right">
 						<ul>
 							<li>
-								<a class="top_banner" href="#"><i class="fa fa-user" aria-hidden="true"></i></a>
+							 <!-- 判斷是否登入，若有登入將會出現登出按鈕 -->
+								<c:choose>
+		                          <c:when test="<%=login_state %>">
+		                           <a href="<%= request.getContextPath()%>/front_end/member/member.do?action=logout"><span class=" top_banner"><i class=" fas fa-sign-out-alt" aria-hidden="true"></i></span></a>
+		                          </c:when>
+		                          <c:otherwise>
+		                           <a href="<%= request.getContextPath()%>/front_end/member/mem_login.jsp"><span class="top_banner"><i class=" fa fa-user" aria-hidden="true"></i></span></a>
+		                          </c:otherwise>
+		                         </c:choose>
 							</li>
+							<li style="<%= logout %>"><a class="top_banner" href="<%=request.getContextPath()%>/front_end/personal_area/personal_area_home.jsp"><i class="fa fa-user" aria-hidden="true"></i></a></li>
 							<li>
-								<a class="top_banner" href="store_shoppingcart.html"><i class="fa fa-shopping-cart shopping-cart" aria-hidden="true"></i></a>
+								<a class="top_banner" href="<%=request.getContextPath()%>/front_end/store/store_cart.jsp"><i class="fa fa-shopping-cart shopping-cart" aria-hidden="true"></i><span class="badge">${total_items}</span></a>
 							</li>
 							<li>
 								<a class="top_banner" href="#"><i class="fa fa-envelope" aria-hidden="true"></i></a>
@@ -154,34 +273,31 @@
 							<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 								<ul class="nav navbar-nav">
 									<li>
-										<a href="news.html">最新消息</a>
+										<a href="<%=request.getContextPath()%>/front_end/news/news.jsp">最新消息</a>
 									</li>
 									<li>
-										<a href="tour.html">景點介紹</a>
+										<a href="<%=request.getContextPath()%>/front_end/attractions/att.jsp">景點介紹</a>
 									</li>
 									<li>
-										<a href="plan.html">行程規劃</a>
+										<a href="<%=request.getContextPath()%>/front_end/trip/trip.jsp">行程規劃</a>
 									</li>
 									<li>
-										<a href="blog.html">旅遊記</a>
+										<a href="<%=request.getContextPath()%>/blog.index">旅遊記</a>
 									</li>
 									<li>
-										<a href="ask.html">問答區</a>
+										<a href="<%=request.getContextPath()%>/front_end/question/question.jsp">問答區</a>
 									</li>
 									<li>
-										<a href="galley.html">照片牆</a>
+										<a href="<%=request.getContextPath()%>/front_end/photowall/photo_wall.jsp">照片牆</a>
 									</li>
 									<li>
-										<a href="chat.html">聊天室</a>
-									</li>
-									<li>
-										<a href="together.html">揪團</a>
+										<a href="<%=request.getContextPath()%>/front_end/grp/grpIndex.jsp">揪團</a>
 									</li>
 									<li>
 										<a href="<%=request.getContextPath()%>/front_end/store/store.jsp">交易平台</a>
 									</li>
 									<li>
-										<a href="advertisement.html">專欄</a>
+										<a href="<%=request.getContextPath()%>/front_end/ad/ad.jsp">專欄</a>
 									</li>
 
 									<div class="clearfix"> </div>
@@ -198,7 +314,7 @@
 		<div class="main" style="min-height: 1px;">
 		
 		<!-- store banner-->
-			<div class="parallax" style="background-image: url('<%=request.getContextPath()%>/front_end/images/store/header.jpg');">
+			<div class="parallax p-t-100" style="background-image: url('<%=request.getContextPath()%>/front_end/images/store/header.jpg');">
 				<div class="page-header-module module">
 					<div class="container">
 						<div class="row">
@@ -217,16 +333,14 @@
 							<a href="<%=request.getContextPath()%>/front_end/index.jsp">首頁</a>&nbsp;/&nbsp;交易平台
 					</nav>
 					<!-- 排序方式 -->
-					<form class="prod-ordering" method="get">
-						<select name="orderby" class="orderby">
-							<option value="menu_order" selected="selected">預設排序</option>
-							<option value="popularity">依熱門度排序</option>
-							<option value="rating">依賣家評價排序</option>
-							<option value="date">依上架時間排序</option>
-							<option value="price">依最低價排序</option>
-							<option value="price-desc">依最高價排序</option>
+					<form METHOD="post" ACTION="product.do" name="form3" class="prod-ordering">
+						<select name="orderby" class="orderby" onchange="getInput2();this.form.submit();">
+							<option value="PRODUCT_ID" selected="selected">預設排序</option>
+							<option value="PRODUCT_DATE">依上架時間排序</option>
+							<option value="PRODUCT_PRICE">依最低價排序</option>
+							<option value="PRODUCT_PRICE DESC">依最高價排序</option>
 						</select>
-						<input type="hidden" name="paged" value="1">
+						<input type="hidden" name="action" value="listProducts_ByCompositeQuery">
 					</form>
 					<!-- //排序方式 -->
 				<!-- 內容 -->
@@ -240,67 +354,69 @@
 								<h4 class="m-text14 p-b-7">
 									分類
 								</h4>
-		
-								<ul class="p-b-54">
-									<li class="p-t-4">
-										<a href="#" class="s-text13 active1">
-											全部
-										</a>
-									</li>
-								<c:forEach var="productCategoryVO" items="${productCategorySvc.all}">
-									<li class="p-t-4">
-										<a href="#" class="s-text13" id="${productCategoryVO.product_category_id}">
-											${productCategoryVO.product_category_name}
-										</a>
-									</li>
-								</c:forEach>
+								
+									<ul class="p-b-54">
+										<li class="p-t-4">
+											<a href="<%=request.getContextPath()%>/front_end/store/store.jsp" class="s-text13 active1">
+												全部
+											</a>
+										</li>
 									
-								</ul>
-
+									
+									<c:forEach var="productCategoryVO" items="${productCategorySvc.all}">
+											<li class="p-t-4">
+												<FORM METHOD="post" ACTION="product.do" name="form_${productCategoryVO.product_category_id}" id="form_${productCategoryVO.product_category_id}">
+													<a href="javascript:{}" onclick="document.getElementById('form_${productCategoryVO.product_category_id}').submit(); return false;" class="s-text13">
+														${productCategoryVO.product_category_name}
+													</a>
+													<input type="hidden" name="PRODUCT_CATEGORY_ID" value="${productCategoryVO.product_category_id}">
+													<input type="hidden" name="action" value="listProducts_ByCompositeQuery">
+												</FORM>
+											</li>
+									</c:forEach>
+									</ul>
+								
 						<!-- 篩選 -->
 						<h4 class="m-text14 p-b-32">
 							篩選
 						</h4>
-
-						<div class="filter-price p-t-22 p-b-50 bo3">
-							<div class="m-text15 p-b-17">
-								價格
+						<FORM METHOD="post" ACTION="product.do" name="form2">
+							<div class="filter-price p-t-22 p-b-50 bo3">
+								<div class="m-text15 p-b-17">
+									價格
+								</div>
+	
+								<div class="wra-filter-bar">
+									<div id="filter-bar"></div>
+								</div>
+	
+								<div class="flex-sb-m flex-w p-t-16">
+							
+									<div class="s-text3 p-t-10 p-b-10">
+										範圍: $<span id="value-lower">610</span> - $<span id="value-upper">980</span>
+									</div>
+								</div>
 							</div>
-
-							<div class="wra-filter-bar">
-								<div id="filter-bar"></div>
-							</div>
-
+	
+							<div class="search-product pos-relative bo4 of-hidden">
+								<input class="s-text7 size6 p-l-23 p-r-50" type="text" name="PRODUCT_NAME" placeholder="搜尋商品...">
+	
+								<button type="submit" class="flex-c-m size5 ab-r-m color2 color0-hov trans-0-4"  onclick="getInput()">
+									<i class="fs-12 fa fa-search" aria-hidden="true"></i>
+								</button>
+							
+							</div>	
 							<div class="flex-sb-m flex-w p-t-16">
-								<div class="w-size11">
+								<div class="w-size11 search-block">
 									<!-- Button -->
-									<button class="flex-c-m size4 bg4 hov1 s-text14 trans-0-4">
-										篩選
+									
+									<input type="hidden" name="action" value="listProducts_ByCompositeQuery">
+									<button type="submit" class="flex-c-m size4 bg4 hov1 s-text14 trans-0-4"  onclick="getInput()">
+										搜尋
 									</button>
 								</div>
-
-								<div class="s-text3 p-t-10 p-b-10">
-									範圍: $<span id="value-lower">610</span> - $<span id="value-upper">980</span>
-								</div>
 							</div>
-						</div>
-
-						<div class="search-product pos-relative bo4 of-hidden">
-							<input class="s-text7 size6 p-l-23 p-r-50" type="text" name="search-product" placeholder="搜尋商品...">
-
-							<button class="flex-c-m size5 ab-r-m color2 color0-hov trans-0-4">
-								<i class="fs-12 fa fa-search" aria-hidden="true"></i>
-							</button>
-						
-						</div>	
-						<div class="flex-sb-m flex-w p-t-16">
-						<div class="w-size11">
-							<!-- Button -->
-							<button class="flex-c-m size4 bg4 hov1 s-text14 trans-0-4">
-								搜尋
-							</button>
-						</div>
-						</div>
+						</FORM>
 					</div>
 				</div>
 
@@ -316,43 +432,64 @@
 					<div class="row">
 					
 					<c:forEach var="productVO" items="${list}" begin="<%=pageIndex%>" end="<%=pageIndex+rowsPerPage-1%>">
+					
 						<div class="col-sm-12 col-md-6 col-lg-4 p-b-50">
 							<!-- Block2 -->
-							<div class="block2">
-								<div class="block2-img wrap-pic-w of-hidden pos-relative block2-labelnew" style="height:16rem">
-									<img class="prod-img" src="data:image/jpeg;base64,${productVO.product_photo_1_base}" onerror="this.src='<%=request.getContextPath()%>/front_end/images/store/no-image-icon-15.png'"  alt="IMG-PRODUCT">
-									<div class="block2-overlay trans-0-4">
-										<div class="block2-btn-addcart w-size1 trans-0-4">
-											<!-- Shopping Cart Button -->
-											<c:if test="${productVO.product_mem_id != memId}">
-												<button id="${productVO.product_id}" class="add-to-cart flex-c-m size1 bg4 hov1 s-text1 trans-0-4">
-													加入購物車
-												</button>
-											</c:if>
+							
+								<div class="block2">
+									<div class="block2-img wrap-pic-w of-hidden pos-relative" style="height:16rem">
+										<img src="data:image/jpeg;base64,${productVO.product_photo_1_base}" onerror="this.src='<%=request.getContextPath()%>/front_end/images/store/no-image-icon-15.png'"  alt="IMG-PRODUCT">
+										<div class="block2-overlay trans-0-4">
+											<div class="block2-btn-addcart w-size1 trans-0-4">
+												<!-- Shopping Cart Button -->
+												<c:if test="${productVO.product_mem_id != memId}">
+													<button type="button" onclick="addById(this, '${productVO.product_id}','${productVO.product_name}','${productVO.product_mem_id}','${productVO.product_price}','${login_state}')" id="${productVO.product_id}" class="add-to-cart flex-c-m size1 bg4 hov1 s-text1 trans-0-4">
+														加入購物車
+													</button>
+												</c:if>
+											</div>
 										</div>
 									</div>
+	
+									<div class="block2-txt p-t-20">
+										
+										<a href="<%=request.getContextPath()%>/front_end/store/store_product.jsp?prod_id=${productVO.product_id}" class="block2-name dis-block s-text3 p-b-5 prod-title">
+											${productVO.product_name}
+										</a>
+									<div class="p-t-10">
+									<!-- 用登入會員id+商品id findpk，若有回傳商品vo，表示此會員有收藏此商品，則讓愛心為紅色，class wish-add-btn 加上 added && 此商品賣家會員id不等於登入會員id-->
+									<c:if test="${productWishlistSvc.getOneProductWishlist(productVO.product_id,memId)!=null && productVO.product_mem_id != memId}">
+										<span class="wish-add m-text6 p-r-5 p-l-5" style="float: lefft;">
+											<a href="#" class="wish-add-btn added" data-login_state="${login_state}" data-memId="${memId}" data-prodId="${productVO.product_id}">
+											<i class="far fa-heart" aria-hidden="true"></i>
+											<i class="fas fa-heart dis-none" aria-hidden="true"></i></a>
+										</span>
+									</c:if>
+									<!-- 用登入會員id+商品id findpk，若沒有回傳商品vo，表示此會員沒有收藏此商品，則讓愛心為白色 && 此商品賣家會員id不等於登入會員id-->
+									<c:if test="${productWishlistSvc.getOneProductWishlist(productVO.product_id,memId)==null && productVO.product_mem_id != memId}">
+										<span class="wish-add m-text6 p-r-5 p-l-5" style="float: lefft;">
+											<a href="#" class="wish-add-btn" data-login_state="${login_state}" data-memId="${memId}" data-prodId="${productVO.product_id}">
+											<i class="far fa-heart" aria-hidden="true"></i>
+											<i class="fas fa-heart dis-none" aria-hidden="true"></i></a>
+										</span>
+									</c:if>
+									<!-- 登入會員無法收藏自己的商品 class 添加 disabled-->
+									<c:if test="${productVO.product_mem_id == memId}">
+										<span class="wish-add m-text6 p-r-5 p-l-5" style="float: lefft;">
+											<a href="#" class="wish-add-btn disabled" data-login_state="${login_state}" data-memId="${memId}" data-prodId="${productVO.product_id}">
+											<i class="far fa-heart" aria-hidden="true"></i>
+											<i class="fas fa-heart dis-none" aria-hidden="true"></i></a>
+										</span>
+									</c:if>
+										<span class="wish-like-text m-text6 p-r-5" id="wish-${productVO.product_id}" style="float: lefft;">
+											${productWishlistSvc.getLikesByProductid(productVO.product_id).size()}
+										</span>
+										<span class="block2-price m-text6 p-r-5" style="float: right;">
+											$ ${productVO.product_price}
+										</span>
+									</div>
+									</div>
 								</div>
-
-								<div class="block2-txt p-t-20">
-									
-									<a href="<%=request.getContextPath()%>/front_end/store/store_product.jsp?prod_id=${productVO.product_id}" class="block2-name dis-block s-text3 p-b-5 prod-title">
-										${productVO.product_name}
-									</a>
-								<div class="p-t-10">
-									<span class="wish-add m-text6 p-r-5 p-l-5" style="float: lefft;">
-										<a href="#" class="wish-add-btn">
-										<i class="far fa-heart" aria-hidden="true"></i>
-										<i class="fas fa-heart dis-none" aria-hidden="true"></i></a>
-									</span>
-									<span class="wish-like-text m-text6 p-r-5" style="float: lefft;">
-										${productWishlistSvc.getLikesByProductid(productVO.product_id).size()}
-									</span>
-									<span class="block2-price m-text6 p-r-5" style="float: right;">
-										$ ${productVO.product_price}
-									</span>
-								</div>
-								</div>
-							</div>
 						</div>
 					</c:forEach>
 				</div>
@@ -408,7 +545,7 @@
 						<div class="footer-grid-info">
 							<ul>
 								<li>
-									<a href="about.html">關於Travle Maker</a>
+									<a href="about.html">關於Travel Maker</a>
 								</li>
 								<li>
 									<a href="about.html">聯絡我們</a>
@@ -440,16 +577,10 @@
 						</div>
 						<div class="social">
 							<ul>
-								<li>
-									<a href="https://www.facebook.com/InstaBuy.tw/"><i class="fab fa-facebook"></i></a>
-								</li>
-								<li>
-									<a href="https://www.instagram.com/"><i class="fab fa-instagram"></i></a>
-								</li>
-								<li>
-									<a href="#"><i class="fab fa-line"></i></a>
-								</li>
-							</ul>
+	                            <li><a href="<%=request.getContextPath()%>/front_end/about_us/about_us.jsp">關於Travel Maker</a></li>
+	                            <li><a href="<%=request.getContextPath()%>/front_end/content/content.jsp">聯絡我們</a></li>
+	                            <li><a href="<%=request.getContextPath()%>/front_end/faq/faq.jsp">常見問題</a></li>
+                        	</ul>
 						</div>
 					</div>
 					<div class="col-md-3 footer-grid">
@@ -467,7 +598,7 @@
 				</div>
 				<div class="copyright">
 					<p>Copyright &copy; 2018 All rights reserved
-						<a href="index.html" target="_blank" title="TravleMaker">TravleMaker</a>
+						<a href="<%=request.getContextPath()%>/front_end/index.jsp" target="_blank" title="TravelMaker">TravelMaker</a>
 					</p>
 				</div>
 			</div>
@@ -479,13 +610,15 @@
 		/*[ No ui ]
 	    ===========================================================*/
 	    var filterBar = document.getElementById('filter-bar');
-
+		var max = '${maxPrice}';
+		
+		console.log(max);
 	    noUiSlider.create(filterBar, {
-	        start: [ 50, 200 ],
+	        start: [ 0, parseInt(max) ],
 	        connect: true,
 	        range: {
-	            'min': 50,
-	            'max': 200
+	            'min': 0,
+	            'max': parseInt(max)
 	        }
 	    });
 
@@ -501,16 +634,50 @@
 <!--========================收藏商品=======================================================================-->
 
 <script>
+
 	  	$('.wish-add-btn').on('click', function(e) {
 		  e.preventDefault();
-		//$('.wish-add a').toggleClass('added');
-		 if($(this).hasClass('added')){
-			 $(this).removeClass('added');
-		 }else{
-			 $(this).addClass('added');
-		 }
-
+			var memId = $(this).attr("data-memId");
+			var prodId = $(this).attr("data-prodId");
+			var login_state = $(this).attr("data-login_state");
+			console.log(login_state=="true");
+			
+	     if(login_state=="true"){
+			 if($(this).hasClass('added')){
+				 $(this).removeClass('added');
+				 var action = "delete";
+				 $.ajax({
+					 url:"productWishlist.do",
+					 method:"POST",
+					 data:{wishlist_mem_id:memId, action:action,wishlist_product_id:prodId,login_state:login_state},
+					 success:function(data){
+						// alert("刪除成功!");
+						$("#wish-"+prodId).html(data.wishlikesize);
+						console.log(data.wishlikesize);
+					 }
+				 })
+				}else if($(this).hasClass('disabled')!= true){
+				 $(this).addClass('added');
+				 var action = "insert";
+				 $.ajax({
+					 url:"productWishlist.do",
+					 method:"POST",
+					 data:{wishlist_mem_id:memId, action:action,wishlist_product_id:prodId,login_state:login_state},
+					 success:function(data){
+						 //alert("新增成功!");
+						 $("#wish-"+prodId).html(data.wishlikesize);
+						 console.log(data.wishlikesize);
+					 }
+				 })
+			 }else{
+				//do nothing;
+				 
+			 }
+			}else{
+				 window.location = '<%=request.getContextPath()%>/front_end/member/mem_login.jsp';
+			}
 		});
+
 </script>
 <!--========================購物車動畫=======================================================================-->
 <script src="https://static.codepen.io/assets/common/stopExecutionOnTimeout-41c52890748cd7143004e05d3c5f786c66b19939c4500ce446314d1748483e13.js"></script>
@@ -553,7 +720,56 @@
     });
 	
 	});
-<!--===============================================================================================-->
 </script>	
+<!--===============================================================================================-->
+<!--加入購物車-->
+<script>
+		function addById(e, product_id,product_name,product_mem_id,product_price,login_state){
+			var action = "ADD";
+			$.ajax({ 
+				url:"shopping.do",
+				method:"POST",
+				data:{action:action,product_id:product_id,product_name:product_name,product_mem_id:product_mem_id,product_price:product_price,quantity:"1",login_state:login_state},
+				success:function(data){
+					if(data === 'not log in'){
+						console.log("轉跳!");
+						window.location.replace("${pageContext.request.contextPath}/front_end/member/mem_login.jsp");
+					}else{
+						console.log("添加成功!");
+						$('.badge').text(data);
+					}
+					
+				} 
+			})
+		
+		}
+  
+</script>
+
+
+<!--===============================================================================================-->
+<!--插入送出的input-->
+<script>
+
+
+function getInput(){
+	var min = $('#value-lower').html();
+	var max = $('#value-upper').html();
+	
+	$('.search-block').append('<input type="hidden" name="minPrice" value="'+min+'">'+'<input type="hidden" name="maxPrice" value="'+max+'">');
+}
+
+function getInput2(){
+	var min = $('#value-lower').html();
+	var max = $('#value-upper').html();
+
+	$('.prod-ordering').append('<input type="hidden" name="minPrice" value="'+min+'">'+'<input type="hidden" name="maxPrice" value="'+max+'">');
+	}
+
+</script>
+
+
+
+
 </body>
 </html>

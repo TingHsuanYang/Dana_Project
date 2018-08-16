@@ -48,3 +48,13 @@ img {
 .page_info {
     padding: 0.5em 1em;
 }
+.update.form,
+.delete.form {
+	display: inline;
+}
+#all_fri_search {
+	display: flex;
+}
+.ui.four.stackable.cards {
+	display: flex;
+}

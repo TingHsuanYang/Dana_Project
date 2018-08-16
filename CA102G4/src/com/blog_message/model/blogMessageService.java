@@ -14,7 +14,7 @@ public class blogMessageService {
 
 		blog_messageVO.setBlog_id(blog_id);
 		blog_messageVO.setMem_id(mem_id);
-		blog_messageVO.setMessage_id(blog_message);
+		blog_messageVO.setBlog_message(blog_message);
 		dao.insert(blog_messageVO);
 
 		return blog_messageVO;
@@ -36,5 +36,17 @@ public class blogMessageService {
 	
 	public List<blog_messageVO> findByBlogId(String blog_id){
 		return dao.findByBlogId(blog_id);
+	}
+	
+	public void updateStatus(String message_id,String mem_id,Integer bm_status) {
+		dao.updateStatus(message_id, mem_id, bm_status);
+	}
+	
+	public List<blog_messageVO> getAll() {
+		return dao.getAll();
+	}
+	
+	public void updateStatusForBackend(String message_id,Integer bm_status) {
+		dao.updateStatusForBackEnd(message_id, bm_status);
 	}
 }

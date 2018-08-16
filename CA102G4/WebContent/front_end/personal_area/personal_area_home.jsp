@@ -1,12 +1,30 @@
-<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" import="javax.servlet.http.*"%>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" import="javax.servlet.http.*"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page import="com.mem.model.*" %>
-<%@ page import="com.photo.model.*" %>
+<%@ page import="com.photo_wall.model.*" %>
 <%@ page import="com.blog.model.*" %>
+<%@ page import="com.chat.model.*" %>
+<%@ page import="com.fri.model.*" %>
+<%@ page import="com.trip.model.*" %>
 <%@ page import="java.util.*" %>
+<jsp:useBean id="memberSvc" scope="page" class="com.mem.model.MemberService"></jsp:useBean>
+<jsp:useBean id="chatRoomSvc" scope="page" class="com.chat.model.ChatRoomService"></jsp:useBean>
+<jsp:useBean id="chatRoomJoinSvc" scope="page" class="com.chat.model.ChatRoom_JoinService"></jsp:useBean>
+<jsp:useBean id="tripSvc" scope="page" class="com.trip.model.TripService"></jsp:useBean>
 <%
 
-	
+	MemberVO memberVO = (MemberVO)session.getAttribute("memberVO");
+
+	String login,logout;
+	if(memberVO != null){		
+		login = "display:none;";
+		logout = "display:'';";
+	}else{
+		login = "display:'';";
+		logout = "display:none;";
+	}
+
+
 	boolean login_state = false ;
 	Object login_state_temp = session.getAttribute("login_state");
 	
@@ -22,15 +40,57 @@
 		return;
 	}
 		
-	//取得登錄者的照片牆
-	Photo_wallJDBCDAO photoSvc = new Photo_wallJDBCDAO(); 
-	List<Photo_wallVO> photoList=photoSvc.getAll_ByMemID(((MemberVO)session.getAttribute("memberVO")).getMem_Id());
+	//取得登錄者的照片牆且狀態為1(未被檢舉)
+	Photo_wallService photoSvc = new Photo_wallService(); 
+	List<Photo_wallVO> photoList=photoSvc.getByMem_id(memberVO.getMem_Id());
 	pageContext.setAttribute("photoList", photoList);
 	
-	//取得登錄者的部落格
+	//取得登錄者的部落格且狀態為0顯示(未被檢舉)
 	blogService blogSvc = new blogService();
-	List<blogVO> blogList=blogSvc.findByMemId(((MemberVO)session.getAttribute("memberVO")).getMem_Id());
+	List<blogVO> blogList=blogSvc.findByMemId(memberVO.getMem_Id());
 	pageContext.setAttribute("blogList", blogList);
+	
+	/***************取出登入者的行程且狀態不為0的 又分1未發表 2已發表(0814在改)*********/
+	List<TripVO> allTripList = tripSvc.getByMem_id(memberVO.getMem_Id());
+	List<TripVO> TripList = new ArrayList<>();
+	for(TripVO tripVO : allTripList){
+		if(tripVO.getTrip_status() == 2){
+			TripList.add(tripVO);		
+		}
+	}
+	pageContext.setAttribute("TripList",TripList);
+	
+	//*****************聊天用：取得登錄者所參與的群組聊天*************/
+	List<ChatRoom_JoinVO> myCRList =chatRoomJoinSvc.getMyChatRoom(memberVO.getMem_Id());
+	Set<ChatRoom_JoinVO> myCRGroup = new HashSet<>(); //裝著我參與的聊天對話為群組聊天時
+	
+	for(ChatRoom_JoinVO myRoom : myCRList){
+		//查詢我參與的那間聊天對話，初始人數是否大於2?? 因為這樣一定就是群組聊天
+		int initJoinCount = chatRoomSvc.getOne_ByChatRoomID(myRoom.getChatRoom_ID()).getChatRoom_InitCNT();
+		if(initJoinCount > 2){
+			myCRGroup.add(myRoom);
+		}
+	}
+	pageContext.setAttribute("myCRList", myCRGroup);
+	
+	/***************聊天用：取出會員的好友******************/
+	FriendService friSvc = new FriendService();
+	List<Friend> myFri = friSvc.findMyFri(memberVO.getMem_Id(),2); //互相為好友的狀態
+	pageContext.setAttribute("myFri",myFri);
+
+	/**************避免聊天-新增群組重新整理後重複提交********/
+	session.setAttribute("addCR_token",new Date().getTime());
+
+
+%>
+<%
+	//取得購物車商品數量
+	Object total_items_temp = session.getAttribute("total_items");
+	int total_items = 0;
+	if(total_items_temp != null ){
+		total_items= (Integer) total_items_temp;
+	}
+	pageContext.setAttribute("total_items",total_items);
 %>
 
 <!DOCTYPE html>
@@ -96,22 +156,56 @@
     
     <!-- 聊天相關CSS及JS -->
     <link href="<%=request.getContextPath()%>/front_end/css/chat/chat_style.css" rel="stylesheet" type="text/css">
+    <script src="<%=request.getContextPath()%>/front_end/js/chat/vjUI_fileUpload.js"></script>
     <script src="<%=request.getContextPath()%>/front_end/js/chat/chat.js"></script>
     <!-- //聊天相關CSS及JS -->
-    <style>
-    
-    /*若搜尋不到文章或圖片時，將會顯示 驚嘆號圖片nothing.png*/
-    .nothing{
-    	width:50px;
-    	heigh:50px;
-    }
-    
-    </style>
-    
+   
+   	<%@ include file="/front_end/personal_area/chatModal_JS.file" %>
+   	<script>
+	// 	 setInterval(function() {
+	// 		  $("div.chatContext").load(function(){alert("有做")});
+	// 	  }, 1000); 
+		
+		//引入個人的部落格資訊，內容太多冗長
+		$(function(){
+		    var len = 90; // 超過100個字以"..."取代
+		    $("._shortText").each(function(i){
+		   	 var temptext=$(this).text().trim().replace('  ', '');
+		        if(temptext.length>len){
+		            $(this).attr("title",temptext);
+		            var text=temptext.substring(0,len-1)+"...";
+		            $(this).text(text);
+		        }
+		    });
+		});
 
+	</script>
 </head>
 
-<body onload="connect();">
+<body>
+	<%-- 錯誤表列 --%>
+	<c:if test="${not empty errorMsgs_Ailee}">
+		<div class="modal fade" id="errorModal_Ailee">
+		    <div class="modal-dialog modal-sm" role="dialog">
+		      <div class="modal-content">
+		        <div class="modal-header">
+		          <i class="fas fa-exclamation-triangle"></i>
+		          <span class="modal-title"><h4>&nbsp;注意：</h4></span>
+		        </div>
+		        <div class="modal-body">
+					<c:forEach var="message" items="${errorMsgs_Ailee}">
+						<li style="color:red" type="square">${message}</li>
+					</c:forEach>
+		        </div>
+		        <div class="modal-footer">
+		          <button type="button" class="btn btn-default" data-dismiss="modal">關閉</button>
+		        </div>
+		      </div>
+		    </div>
+		 </div>
+	</c:if>
+	<%-- 錯誤表列 --%>
+
     <!-- banner -->
     <div class="banner about-bg">
         <div class="top-banner about-top-banner">
@@ -125,8 +219,28 @@
                 </div>
                 <div class="top-banner-right">
                     <ul>
-                        <li><a class="top_banner" href="<%=request.getContextPath()%>/front_end/personal_area/personal_area_home.jsp"><i class="fa fa-user" aria-hidden="true"></i></a></li>
-                        <li><a class="top_banner" href="#"><i class="fa fa-shopping-cart" aria-hidden="true"></i></a></li>
+                        <li>
+	                      	 <!-- 判斷是否登入，若有登入將會出現登出按鈕 -->
+	                         <c:choose>
+	                          <c:when test="<%=login_state %>">
+	                           	<a href="<%= request.getContextPath()%>/front_end/member/member.do?action=logout">
+	                           		<span class=" top_banner"><i class="fas fa-sign-out-alt" aria-hidden="true"></i></span>
+	                           	</a>
+	                          </c:when>
+	                          <c:otherwise>
+	                           	<a href="<%= request.getContextPath()%>/front_end/member/mem_login.jsp">
+	                           		<span class="top_banner"><i class="fa fa-user" aria-hidden="true"></i></span>
+	                           	</a>
+	                          </c:otherwise>
+	                         </c:choose>
+	                     </li>
+	                     <!-- 若沒登入，會呈現出來可以進入個人管理頁面-->
+	                    <li style="<%= logout %>"><a class="top_banner" href="<%=request.getContextPath()%>/front_end/personal_area/personal_area_home.jsp"><i class="fa fa-user" aria-hidden="true"></i></a></li>          	
+                        <li>
+							<a class="top_banner" href="<%=request.getContextPath()%>/front_end/store/store_cart.jsp">
+								<i class="fa fa-shopping-cart shopping-cart" aria-hidden="true"></i><span class="badge">${total_items}</span>
+							</a>
+						</li>
                         <li><a class="top_banner" href="#"><i class="fa fa-envelope" aria-hidden="true"></i></a></li>
                     </ul>
                 </div>
@@ -149,15 +263,14 @@
                         <!-- Collect the nav links, forms, and other content for toggling -->
                         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                             <ul class="nav navbar-nav">
-                                <li><a href="news.html">最新消息</a></li>
-                                <li><a href="tour.html">景點介紹</a></li>
-                                <li><a href="plan.html">行程規劃</a></li>
-                                <li><a href="blog.html">旅遊記</a></li>
-                                <li><a href="ask.html">問答區</a></li>
-                                <li><a href="galley.html">照片牆</a></li>
-                                <li><a href="chat.html">聊天室</a></li>
-                                <li><a href="together.html">揪團</a></li>
-                                <li><a href="buy.html">交易平台</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/news/news.jsp">最新消息</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/attractions/att.jsp">景點介紹</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/trip/trip.jsp">行程規劃</a></li>
+                                <li><a href="<%=request.getContextPath()%>/blog.index">旅遊記</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/question/question.jsp">問答區</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/photowall/photo_wall.jsp">照片牆</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/grp/grpIndex.jsp">揪團</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/store/store.jsp">交易平台</a></li>
                                 <li><a href="<%=request.getContextPath()%>/front_end/ad/ad.jsp">專欄</a></li>
 
                                 <div class="clearfix"> </div>
@@ -173,6 +286,7 @@
     
     <!--container-->
     <div class="ui container">
+    
         <!--會員個人頁面標頭-->
         <div class="mem_ind_topbar">
             <!--會員封面-->
@@ -182,10 +296,19 @@
             <!--會員訊息--> 
             <div class="mem_ind_info"> 
                 <div class="mem_ind_img">
-                    <img src="<%=request.getContextPath()%>/front_end/readPic?action=member&id=${memberVO.mem_Id}">
+                   	<c:choose>
+                  		<c:when test="${memberVO.mem_Photo == null}">
+                  			<img src='<%=request.getContextPath()%>/front_end/images/all/mem_nopic.jpg'>
+                  		</c:when>
+                  		<c:otherwise>
+                  			<img src='<%=request.getContextPath()%>/front_end/readPic?action=member&id=${memberVO.mem_Id}'>
+                  		</c:otherwise>
+                  	</c:choose>
                 </div>
                 <div class="mem_ind_name">
-                    <p>${memberVO.mem_Name}</p>
+                    <p>${memberVO.mem_Name}
+                    	${memberVO.mem_Sex == 1 ? "<i class='fas fa-male' style='color:#4E9EE2'></i>" : "<i class='fas fa-female' style='color:#EC7555'></i>"}	
+                    </p> 
                     <p class="text-truncate" style="font-size:0.9em;padding-top:10px;max-height:110px">
 					   ${memberVO.mem_Profile}
                     </p>
@@ -193,8 +316,10 @@
             </div> 
         </div>
         <!--//會員個人頁面標頭-->
+        
         <!--會員個人頁面-首頁內容-->
         <div class="mem_ind_content">
+        
           <!-- 頁籤項目 -->
           <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item active">
@@ -208,49 +333,50 @@
               </a>
             </li>
             <li class="nav-item">
-              <a href="personal_area_blog.html">
+              <a href="<%=request.getContextPath()%>/blog.do?action=myBlog&mem_id=${memberVO.mem_Id}">
                   <i class="fab fa-blogger"></i>旅遊記
               </a>
             </li>
             <li class="nav-item">
-              <a href="#trip">
+              <a href="<%=request.getContextPath()%>/front_end/trip/personal_area_trip.jsp">
                   <i class="fas fa-map"></i>行程
               </a>
             </li>
             <li class="nav-item">
-              <a href="#together">
+              <a href="<%=request.getContextPath()%>/front_end/grp/personal_area_grp.jsp">
                   <i class="fas fa-bullhorn"></i>揪團
               </a>
             </li>
             <li class="nav-item">
-              <a href="#question">
+              <a href="<%=request.getContextPath()%>/front_end/personal/personal_area_question.jsp">
                   <i class="question circle icon"></i>問答
               </a>
             </li>
             <li class="nav-item">
-              <a href="#gallery">
+              <a href="<%=request.getContextPath()%>/front_end/personal_area/personal_area_photoWall.jsp">
                   <i class="image icon"></i>相片
               </a>
             </li>
             
              <li class="nav-item">
-              <a href="#gallery">
+              <a href="<%=request.getContextPath()%>/front_end/personal_area/personal_area_sell.jsp">
                   <i class="money bill alternate icon"></i>銷售
               </a>
             </li>
 
              <li class="nav-item">
-              <a href="#gallery">
+              <a href="<%=request.getContextPath()%>/front_end/personal_area/personal_area_buy.jsp">
                   <i class="shopping cart icon"></i>購買
               </a>
             </li>
             <li class="nav-item" style="float: right">
-              <a href="<%=request.getContextPath()%>/front_end/member/member.do?action=getOne_For_Display&mem_Id=${memberVO.mem_Id}">
+              <a href="<%=request.getContextPath()%>/front_end/member/update_mem_profile.jsp">
                   <i class="cog icon"></i>設置
               </a>
             </li>
           </ul>
           <!-- //頁籤項目 -->
+          
           <!-- 頁籤項目-首頁內容 -->
           <div class="tab-content" style="float:left;width:75%">
             <!--首頁左半邊-個人首頁-->
@@ -259,7 +385,9 @@
                <div class="u_ind_item">
                   <div class="u_title">
                       <strong>我的照片</strong>
-                      <a href="#"><i class="angle double right icon"></i>更多</a>
+                      <a href="<%=request.getContextPath()%>/front_end/personal_area/personal_area_photoWall.jsp">
+                      	<i class="angle double right icon"></i>更多
+                      </a>
                       <div>
                           <span>${photoList.size()}</span>
                           <span>張照片</span>
@@ -271,7 +399,7 @@
                       <div class="flex">
 						<c:forEach var="photovo" items="${photoList}" begin="0" end="4">
 							<div class="item">
-						    	<a href="">
+						    	<a href="<%=request.getContextPath()%>/front_end/photowall/view_photowall.jsp?photo_No=${photovo.photo_No}">
 						        	<img src="<%=request.getContextPath()%>/front_end/readPic?action=photowall&id=${photovo.photo_No}">
 						    	</a>
 							</div>
@@ -290,7 +418,9 @@
                <div class="u_ind_item">
                   <div class="u_title">
                       <strong>我的旅遊記</strong>
-                      <a href="#"><i class="angle double right icon"></i>更多</a>
+                      <a href="<%=request.getContextPath()%>/blog.do?action=myBlog&mem_id=${memberVO.mem_Id}">
+                      	<i class="angle double right icon"></i>更多
+                      </a>
                       <div>
                           <span>${blogList.size()}</span>
                           <span>篇遊記</span>
@@ -304,22 +434,23 @@
                      		<c:forEach var="blogvo" items="${blogList}" begin="0" end="2">
 	                      	  <!-- 部落格區塊 -->
 		                      <div class="item col-12">
-		                        <div class="ui small image ">
+		                        <div class="ui small image">
 		                          <a href="<%=request.getContextPath()%>/blog.do?action=article&blogID=${blogvo.blog_id}">
 		                              <img src="<%=request.getContextPath()%>/blogPicReader?blog_id=${blogvo.blog_id}"/>
 		                          </a>
 		                        </div>
-		                        <div class="content ">
+		                        <div class="content">
 		                          <div class="text-truncate header">${blogvo.blog_title}</div>
 		                          <div class="meta">
 		                            <span class="stay">
 		                            	<i class="fas fa-calendar-alt"></i>
-		                            	${blogvo.travel_date}
+		                            	發文日期：${blogvo.travel_date}
 		                            </span>
 		                          </div>
-		                          <div class="description text-truncate">
-		                            <span>
-		                                <i class="fas fa-map-marker-alt"></i>
+		                          <div class="description">
+		                          	<i class="fas fa-align-justify"></i>
+		                            <span class="_shortText">
+		                                
 		                                <c:set var="blog_content" value="${blogvo.blog_content}"/>
 										<%= ((String)pageContext.getAttribute("blog_content")).replaceAll("<[^>]*>","").trim()%>
 		                            </span>
@@ -342,71 +473,44 @@
                <div class="u_ind_item">
                   <div class="u_title">
                       <strong>我的行程</strong>
-                      <a href="#"><i class="angle double right icon"></i>更多</a>
+                      <a href="<%=request.getContextPath()%>/front_end/trip/personal_area_trip.jsp">
+                      	<i class="angle double right icon"></i>更多
+                      </a>
                       <div>
-                          <span>11</span>
+                          <span>${TripList.size()}</span>
                           <span>篇行程</span>
                       </div>
                   </div>
                   <div class="mem_ind_item_plan">
                      <div class="ui items">
-                      <div class="item">
-                        <div class="ui small image">
-                         <a href="">
-                          <img src="<%=request.getContextPath()%>/front_end/images/all/2.jpg">
-                         </a>
-                        </div>
-                        <div class="content">
-                          <div class="header">水宝小慢的澳大利亚行程</div>
-                          <div class="meta">
-                            <span class="stay"><i class="fas fa-calendar-alt"></i> 13天</span>
-                          </div>
-                          <div class="description">
-                            <p>
-                                <i class="fas fa-map-marker-alt"></i> 
-                                北京>悉尼>澳大利亚蓝山>霍巴特>阿德莱德>悉尼>北京京>悉尼>澳大利亚蓝山>霍巴特>阿德莱德>悉尼>北
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="item">
-                        <div class="ui small image">
-                         <a href="">
-                          <img src="<%=request.getContextPath()%>/front_end/images/all/2.jpg">
-                         </a>
-                        </div>
-                        <div class="content">
-                          <div class="header">水宝小慢的澳大利亚行程</div>
-                          <div class="meta">
-                            <span class="stay"><i class="fas fa-calendar-alt"></i> 13天</span>
-                          </div>
-                          <div class="description">
-                            <p>
-                                <i class="fas fa-map-marker-alt"></i> 
-                                北京>悉尼>澳大利亚蓝山>霍巴特>阿德莱德>悉尼>北京京>悉尼>澳大利亚蓝山>霍巴特>阿德莱德>悉尼>北
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="item">
-                        <div class="ui small image">
-                         <a href="">
-                          <img src="<%=request.getContextPath()%>/front_end/images/all/2.jpg">
-                         </a>
-                        </div>
-                        <div class="content">
-                          <div class="header">水宝小慢的澳大利亚行程</div>
-                          <div class="meta">
-                            <span class="stay"><i class="fas fa-calendar-alt"></i> 13天</span>
-                          </div>
-                          <div class="description">
-                            <p>
-                                <i class="fas fa-map-marker-alt"></i> 
-                                北京>悉尼>澳大利亚蓝山>霍巴特>阿德莱德>悉尼>北京京>悉尼>澳大利亚蓝山>霍巴特>阿德莱德>悉尼>北
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                      <c:choose>
+	                      <c:when test="${not empty TripList}">
+		                      <c:forEach var="tripvo" items="${TripList}" begin="0" end="2">
+			                      <div class="item">
+			                        <div class="ui small image">
+			                         <a href="<%=request.getContextPath()%>/front_end/trip/tripDetail.jsp?trip_no=${tripvo.trip_no}">
+			                         	<img src="<%=request.getContextPath()%>/front_end/readPic?action=trip&id=${tripvo.trip_no}">
+			                         </a>
+			                        </div>
+			                        <div class="content">
+			                          <div class="header">${tripvo.trip_name}</div>
+			                          <div class="meta">
+			                            <span class="stay"><i class="fas fa-play-circle"></i>出發日期：${tripvo.trip_startDay}</span>
+			                          </div>
+			                          <div class="description">
+			                          	<span class="stay"><i class="fas fa-clock"></i>&nbsp;${tripvo.trip_days}天</span>
+			                            <p>
+											<!-- 本來要放行程有幾個景點<i class="fas fa-map-marker-alt"></i> -->
+			                            </p>
+			                          </div>
+			                        </div>
+			                      </div>
+		                      </c:forEach>
+	                      </c:when>
+ 						  <c:otherwise>
+							<img src="<%=request.getContextPath()%>/front_end/images/all/nothing.png" class="nothing">尚未發表
+					      </c:otherwise>
+                      </c:choose>
                      </div>  
                   </div>
                </div>
@@ -415,37 +519,35 @@
             <!--//首頁左半邊-個人首頁-->
           </div>
           <!--頁籤項目-首頁內容-->
+          
           <!--首頁右半邊-->                
-          <div style="width:25%;float:left">
-                <div class="add_Div">
-                    <a href="blog_add.jsp" class="adddiv_a">
+          <div style="width:25%;float:left" class="add_Div">
+                <div>
+                    <a href="<%=request.getContextPath()%>/front_end/blog/blog_add.jsp" class="adddiv_a">
                         <div style="color:rgb(93,187,133)">
-                            <i class="fas fa-edit"></i><br>
-                            寫旅遊記
+                            <i class="fas fa-edit"></i><br>寫旅遊記
                         </div>        
                     </a>
-                    <a href="" class="adddiv_a">
+                    <a href="<%=request.getContextPath()%>/front_end/trip/newTrip.jsp" class="adddiv_a">
                         <div style="color:rgb(245,177,0)">
-                            <i class="far fa-calendar-check"></i><br>
-                            規劃行程
+                            <i class="far fa-calendar-check"></i><br>規劃行程
                         </div>  
                     </a>
-                    <a href="" class="adddiv_a">
+                    <a href="<%=request.getContextPath()%>/front_end/grp/grpIndex.jsp" class="adddiv_a">
                         <div style="color:rgb(242,102,34)">
-                        <i class="fas fa-bullhorn"></i><br>
-                        揪旅伴去
+                        <i class="fas fa-bullhorn"></i><br>揪旅伴去
                         </div>  
                     </a>
-                    <a href="" class="adddiv_a">
+                    <a href="<%=request.getContextPath()%>/front_end/ask/ask.jsp" class="adddiv_a">
                         <div style="color:rgb(81,167,219)">
-                            <i class="fas fa-comment-dots"></i><br>
-                            提問題去
+                            <i class="fas fa-comment-dots"></i><br>提問題去
                         </div> 
                     </a>
 
                 </div>
             </div>
           <!--//首頁右半邊--> 
+          
         </div>
         <!-- //會員個人頁面內容 -->
     </div>
@@ -461,9 +563,9 @@
                     </div>
                     <div class="footer-grid-info">
                         <ul>
-                            <li><a href="about.html">關於Travel Maker</a></li>
-                            <li><a href="about.html">聯絡我們</a></li>
-                            <li><a href="about.html">常見問題</a></li>
+                           <li><a href="<%=request.getContextPath()%>/front_end/about_us/about_us.jsp">關於Travel Maker</a></li>
+                           <li><a href="<%=request.getContextPath()%>/front_end/content/content.jsp">聯絡我們</a></li>
+                           <li><a href="<%=request.getContextPath()%>/front_end/faq/faq.jsp">常見問題</a></li>
                         </ul>
                     </div>
                 </div>
@@ -512,245 +614,7 @@
     </div>
     <!-- //footer -->
     
-    <!-- 小的聊天列表 start-->
-    <div class="chatContainer">
-        <div class="chatHeader">
-            
-                &nbsp;<i class="fas fa-comment"></i>&nbsp;聊天室
-                <span style="float: right;padding-right: 10px" id="chat_addFri_span">
-                    <span data-toggle="tooltip" title="建立新對話" data-placement="top" >
-                        <i class="fas fa-user-plus"></i>
-                    </span>
-                </span> 
 
-        </div>
-        <div class="chatContext">
-            <ul class="list-group">
-                <li class="list-group-item"><img class="avatar" src="<%=request.getContextPath()%>/front_end/images/all/p1.jpg">凱文</li>
-                <li class="list-group-item"><img class="avatar" src="<%=request.getContextPath()%>/front_end/images/all/p2.jpg">大眼怪</li>
-                <li class="list-group-item"><img class="avatar" src="<%=request.getContextPath()%>/front_end/images/all/p3.png">卡納赫拉</li>
-                <li class="list-group-item"><img class="avatar" src="<%=request.getContextPath()%>/front_end/images/all/p4.png">臭跩貓</li>
-                <li class="list-group-item"><img class="avatar" src="<%=request.getContextPath()%>/front_end/images/all/p5.jpg">好想兔</li>
-                <li class="list-group-item"><img class="avatar" src="<%=request.getContextPath()%>/front_end/images/all/p6.png">茶包</li>
-            </ul>
-        </div>
-        <div class="chatFooter">
-            <div class="input-group">
-              <span class="input-group-addon" id="basic-addon1"><i class="fas fa-search"></i></span>
-              <input type="text" class="form-control" placeholder="搜尋" aria-describedby="basic-addon1" id="search_Fri">
-            </div>
-        </div>
-    </div>
-    <!-- 小的聊天列表 END -->
-    
-    <!-- 聊天對話視窗start -->
-    <div class="input_chatContainer">
-        <div class="input_chatHeader">
-                &nbsp;黃世銘 <!-- 互為好友才能聊天 -->
-                <span style="float: right;padding-right: 10px">
-                	<span data-toggle="tooltip" title="關閉" data-placement="top" >
-                		<i class="fas fa-times"></i>
-                	</span> 
-                </span>
-                <span style="float: right;padding-right: 10px" id="chat_addFri_span">
-                    <span data-toggle="tooltip" title="建立新對話" data-placement="top" >
-                        <i class="fas fa-user-plus"></i>
-                    </span>
-                </span>
-        </div>
-        <div class="input_chatContext" id="messageArea">
-			<!--聊天內容 -->
-        </div>
-        <div class="input_chatFooter">
-            <div class="input-group">
-              <input type="text" id="message" name="message" class="form-control" placeholder="輸入訊息....." 
-              	aria-describedby="basic-addon1" onkeydown="if (event.keyCode == 13) sendMessage();">
-              <span class="input-group-addon btn" onclick="sendMessage();">送出</span>
-            </div>
-        </div>
-    </div>
-    <!-- 聊天對話視窗End -->
-    
-    <!-- Modal 建立聊天視窗 start-->
-    <div class="modal fade" id="chat_AddFri_Modal" role="dialog">
-        <div class="modal-dialog">
-
-          <!-- Modal 建立聊天視窗content start-->
-          <div class="modal-content" >
-            
-            <div class="modal-header">
-              <h4 class="modal-title">建立聊天</h4>
-            </div>
-            
-            <div class="modal-body"> 
-                <!--輸入盒聊天對話-->
-                <div class="ui left icon input fluid">
-                  <input type="text" placeholder="為聊天命名" id="chatName" required>
-                  <i class="users icon"></i>
-                </div>
-                <!--分隔線-->
-                <hr>
-                <!--搜尋要加入聊天對話的好友-->
-                <div style="height:400px;margin-top:10px">
-                      <div style="float:left;width:60%;height:inherit">
-                          <div class="ui icon input fluid">
-                              <input type="text" placeholder="搜尋要加入的用戶" id="search_Fri_modal">
-                              <i class="search icon"></i>
-                          </div>
-                          <div class="ui middle aligned selection list" style="height:89%;overflow:auto">
-                              
-                           <div class="item">
-                               <input type="checkbox" class="ui checkbox" id="fri01">
-                               <label for="fri01" style="width:80%">
-                                  <img class="ui avatar image" src="<%=request.getContextPath()%>/front_end/images/all/p1.jpg">
-                                  <span class="content">小小兵small</span>  
-                               </label>
-                           </div>
-                           <div class="item">
-                               <input type="checkbox" class="ui checkbox" id="fri02">
-                               <label for="fri02" style="width:80%">
-                                  <img class="ui avatar image" src="<%=request.getContextPath()%>/front_end/images/all/p2.jpg">
-                                  <span class="content">大眼怪eye</span>  
-                               </label>
-                           </div>
-                           <div class="item">
-                               <input type="checkbox" class="ui checkbox" id="fri03">
-                               <label for="fri03" style="width:80%">
-                                  <img class="ui avatar image" src="<%=request.getContextPath()%>/front_end/images/all/p3.png">
-                                  <span class="content">卡納赫拉kanihei</span>  
-                               </label>
-                           </div>
-                           <div class="item">
-                               <input type="checkbox" class="ui checkbox" id="fri04">
-                               <label for="fri04" style="width:80%">
-                                  <img class="ui avatar image" src="<%=request.getContextPath()%>/front_end/images/all/p4.png">
-                                  <span class="content">北爛貓cat</span>  
-                               </label>
-                           </div>
-                           <div class="item">
-                               <input type="checkbox" class="ui checkbox" id="fri05">
-                               <label for="fri05" style="width:80%">
-                                  <img class="ui avatar image" src="<%=request.getContextPath()%>/front_end/images/all/p5.jpg">
-                                  <span class="content">好想兔rabbit</span>  
-                               </label>
-                           </div>
-                           <div class="item">
-                               <input type="checkbox" class="ui checkbox" id="fri06">
-                               <label for="fri06" style="width:80%">
-                                  <img class="ui avatar image" src="<%=request.getContextPath()%>/front_end/images/all/p6.png">
-                                  <span class="content">豆卡頻道dog</span>  
-                               </label>
-                           </div>
-                           <div class="item">
-                               <input type="checkbox" class="ui checkbox" id="fri07">
-                               <label for="fri07" style="width:80%">
-                                  <img class="ui avatar image" src="<%=request.getContextPath()%>/front_end/images/all/author1.jpg">
-                                  <span class="content">美女women</span>  
-                               </label>
-                           </div>
-                           <div class="item">
-                               <input type="checkbox" class="ui checkbox" id="fri08">
-                               <label for="fri08" style="width:80%">
-                                  <img class="ui avatar image" src="<%=request.getContextPath()%>/front_end/images/all/t4.jpg">
-                                  <span class="content">帥哥man</span>  
-                               </label>
-                           </div>
-                              
-                          </div>
-                      </div>
-                      <!--已選擇加入聊天對話列表-->
-                      <div style="float:left;width:40%;height:inherit;border-left: 1px" id="select_Fri">
-                          <div style="padding-left: 20px;height: 10%">
-                          已選擇<i class="check circle icon"></i>
-                          </div>
-                          <div class="ui middle aligned selection list" style="height:89%;overflow:auto" id="select_FriList">
-                                <!--這裡我要塞被選到的好友；動態顯示--> 
-                          </div>
-                      </div>         
-                </div>    
-            </div>
-            
-            <div class="modal-footer"> 
-              <button type="button" class="btn btn-danger" data-dismiss="modal">取消</button>
-              <button type="button" class="btn btn-success">確認</button>
-            </div>
-                      
-          </div>
-          <!-- Modal 建立聊天視窗content END-->
-        </div>
-      </div>
-    <!-- Modal 建立聊天視窗 END -->
-    
-    
-    <script>
-    
-		
-    	var MyPoint = "/chat/${memberVO.mem_Id}";
-    	var host = window.location.host;
-    	var endPointURL = "ws://localhost:8081<%=request.getContextPath()%>"+MyPoint;
-    	var webSocket;
-    	
-		function connect(){
-			//建立一個websocket
-			webSocket = new WebSocket(endPointURL);
-
-			webSocket.onopen = function(event){
-				alert("WebSocket Connected");
-			};
-			
-			//收到訊息的時候
-			webSocket.onmessage = function(event){
-				var messageArea = $("#messageArea");
-				var jsonObj = JSON.parse(event.data);
-				
-				//若找不到
-				if($("#" + jsonObj.MEM_ID + "").length === 0){
-					alert("找步道該元素");
-				}
-
-				var massage = jsonObj.MEM_ID+":"+jsonObj.MSG+"("+jsonObj.TIME+")\r\n<br>";
-				messageArea.append(massage);	
-				messageArea.scrollTop = messageArea.scrollHeight;
-			};
-			
-			webSocket.onclose = function(event){
-				alert("WebSocket 關閉囉!");
-			};
-			
-		}
-		
-		//當按下聊天送出按鈕後會呼叫的
-		function sendMessage() {
-			var userName = "${memberVO.mem_Id}";
-			if(userName === ""){
-				alert("錯誤：發出訊息，未取到會員ID");
-				return;
-			}
-			
-			var inputMessage = $("#message");
-			var message = inputMessage.val().trim();
-			alert("準備送出的訊息為:"+message);
-			
-			if(message === ""){
-				alert("未輸入訊息不能送出喔");
-				inputMessage.focus();
-			}else{
-				var date = new Date();
-				var date_str = date.toJSON().substr(0,10);
-				var time_str = date.toTimeString().substr(0,8);
-				var jsonObj ={
-					"MEM_ID":userName,
-					"MSG":message,
-					"TIME":date_str+" "+time_str
-				};
-				webSocket.send(JSON.stringify(jsonObj));
-				inputMessage.val("");
-				inputMessage.focus();
-			}
-			
-		}
-
-    </script>
 </body>
 
 </html>

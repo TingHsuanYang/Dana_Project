@@ -12,4 +12,7 @@ public interface blog_tagDAO_interface {
 	
 	public List<blog_tagVO> getAllByABlog(String blog_id);
 	
+	public List<blog_tagVO> getAll();
+	
+	public int deleteAllByBtnID(String btn_id);
 }

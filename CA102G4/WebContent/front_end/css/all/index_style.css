@@ -290,7 +290,7 @@ body > div.about > div > div.about-grids > div > div > a {
 	text-align:center;
 }
 .about-grid-info{
-    background: url(../../images/all/a.png)no-repeat 0px 0px;
+/*     background: url(../../images/all/a.png)no-repeat 0px 0px; */
     background-size: cover;
     min-height: 255px;
 }
@@ -302,17 +302,17 @@ body > div.about > div > div.about-grids > div > div > a {
     line-height: 7.5em;
 }
 .about-grid-info1{
-	background: url(../../images/all/a1.png)no-repeat 0px 0px;
+/* 	background: url(../../images/all/a1.png)no-repeat 0px 0px; */
 	background-size: cover;
     min-height: 255px;
 }
 .about-grid-info2{
-	background: url(../../images/all/a2.png)no-repeat 0px 0px;
+/* 	background: url(../../images/all/a2.png)no-repeat 0px 0px; */
 	background-size: cover;
     min-height: 255px;
 }
 .about-grid-info3{
-	background: url(../../images/all/a3.png)no-repeat 0px 0px;
+/* 	background: url(../../images/all/a3.png)no-repeat 0px 0px; */
 	background-size: cover;
     min-height: 255px;
 }
@@ -368,21 +368,7 @@ body > div.about > div > div.about-grids > div > div > a {
     background: #CEDDB6;
 }
 .wthree-offer-grid{
-    background: url(../../images/all/ad01.jpeg) no-repeat 0px 0px;
-    background-size: cover;
-    min-height: 500px;
-	box-shadow: 0 -1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.24);
-	text-align:center;
-}
-.wthree-offer-grid1{
-    background: url(../../images/all/ad02.jpeg) no-repeat 0px 0px;
-    background-size: cover;
-    min-height: 500px;
-	box-shadow: 0 -1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.24);
-	text-align:center;
-}
-.wthree-offer-grid2{
-    background: url(../../images/all/ad03.jpeg) no-repeat 0px 0px;
+    background: no-repeat 0px 0px;
     background-size: cover;
     min-height: 500px;
 	box-shadow: 0 -1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.24);
@@ -2392,20 +2378,20 @@ button.btn1:hover{
 		width: 100%;
 	}
 	.about-grid-info {
-		background: url(../../images/all/a.png)no-repeat 50% 50%;	
+/* 		background: url(../../images/all/a.png)no-repeat 50% 50%;	 */
 		min-height: 175px;
 		background-size: 72%;
 	}
 	.about-grid-info1 {
-		background: url(../../images/all/a1.png)no-repeat 50% 50%;
+/* 		background: url(../../images/all/a1.png)no-repeat 50% 50%; */
 		background-size: 72%;
 	}
 	.about-grid-info2 {
-		background: url(../../images/all/a2.png)no-repeat 50% 50%;
+/* 		background: url(../../images/all/a2.png)no-repeat 50% 50%; */
 		background-size: 72%;
 	}
 	.about-grid-info3 {
-		background: url(../../images/all/a3.png)no-repeat 50% 50%;
+/* 		background: url(../../images/all/a3.png)no-repeat 50% 50%; */
 		background-size: 72%;
 	}
 	.about-grid-info h4 {

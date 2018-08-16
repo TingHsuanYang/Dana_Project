@@ -1,12 +1,74 @@
-<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page import="java.util.*" %>
 <%@ page import="com.ad.model.*" %>
+<%@ page import="com.mem.model.*" %>
 <%
     AdService AdSer = new AdService();
     List<AdVO> list = AdSer.getHotAD();
     pageContext.setAttribute("list",list);
+     
+	//若有登入，可以看到登出按鈕
+	MemberVO memberVO = (MemberVO)session.getAttribute("memberVO");
+	String login,logout;
+	if(memberVO != null){		
+		login = "display:none;";
+		logout = "display:'';";
+	}else{
+		login = "display:'';";
+		logout = "display:none;";
+	}
+	
+	boolean login_state = false ;
+	Object login_state_temp = session.getAttribute("login_state");
+	
+	//確認登錄狀態
+	if(login_state_temp != null ){
+		login_state= (boolean) login_state_temp ;
+	}   
 %>
+<%
+	//取得購物車商品數量
+	Object total_items_temp = session.getAttribute("total_items");
+	int total_items = 0;
+	if(total_items_temp != null ){
+		total_items= (Integer) total_items_temp;
+	}
+	pageContext.setAttribute("total_items",total_items);
+%>
+
+<%@ page import="com.fri.model.*,com.chat.model.*" %>
+<jsp:useBean id="chatRoomSvc" scope="page" class="com.chat.model.ChatRoomService"></jsp:useBean>
+<jsp:useBean id="chatRoomJoinSvc" scope="page" class="com.chat.model.ChatRoom_JoinService"></jsp:useBean>
+<jsp:useBean id="memberSvc" scope="page" class="com.mem.model.MemberService"></jsp:useBean>
+<jsp:useBean id="friSvc" scope="page" class="com.fri.model.FriendService"></jsp:useBean>
+<%
+	if(memberVO != null){
+		//*****************聊天用：取得登錄者所參與的群組聊天*************/
+		List<ChatRoom_JoinVO> myCRList =chatRoomJoinSvc.getMyChatRoom(memberVO.getMem_Id());
+		Set<ChatRoom_JoinVO> myCRGroup = new HashSet<>(); //裝著我參與的聊天對話為群組聊天時
+		
+		for(ChatRoom_JoinVO myRoom : myCRList){
+			//查詢我參與的那間聊天對話，初始人數是否大於2?? 因為這樣一定就是群組聊天
+			int initJoinCount = chatRoomSvc.getOne_ByChatRoomID(myRoom.getChatRoom_ID()).getChatRoom_InitCNT();
+			if(initJoinCount > 2){
+				myCRGroup.add(myRoom);
+			}
+		}
+		pageContext.setAttribute("myCRList", myCRGroup);
+		
+		/***************聊天用：取出會員的好友******************/
+		List<Friend> myFri = friSvc.findMyFri(memberVO.getMem_Id(),2); //互相為好友的狀態
+		pageContext.setAttribute("myFri",myFri);
+		
+		/**************避免聊天-新增群組重新整理後重複提交********/
+		session.setAttribute("addCR_token",new Date().getTime());
+
+		
+	}
+
+%>
+
 
 <!DOCTYPE html>
 <html>
@@ -64,13 +126,45 @@
         <link href="<%=request.getContextPath()%>/front_end/css/ad/ad_page.css" rel="stylesheet" type="text/css">
         <!-- //AD_Page相關CSS及JS -->
 
-        <!-- 聊天相關CSS及JS -->
-        <link href="<%=request.getContextPath()%>/front_end/css/chat/chat_style.css" rel="stylesheet" type="text/css">
-        <script src="<%=request.getContextPath()%>/front_end/js/chat/chat.js"></script>
-        <!-- //聊天相關CSS及JS -->    
+	   <!-- 聊天相關CSS及JS -->
+	   <link href="<%=request.getContextPath()%>/front_end/css/chat/chat_style.css" rel="stylesheet" type="text/css">
+	   <script src="<%=request.getContextPath()%>/front_end/js/chat/vjUI_fileUpload.js"></script>
+	   <script src="<%=request.getContextPath()%>/front_end/js/chat/chat.js"></script>
+	   <!-- //聊天相關CSS及JS -->
+	   
+	   <!-- 登入才會有的功能(檢舉、送出或接受交友邀請通知)-->
+	   <c:if test="${memberVO != null}">
+	   		<%@ include file="/front_end/personal_area/chatModal_JS.file" %>
+	   </c:if>
+	   
+	   
     </head>
 
     <body>
+        <%-- 錯誤表列 --%>
+		<c:if test="${not empty errorMsgs_Ailee}">
+			<div class="modal fade" id="errorModal_Ailee">
+			    <div class="modal-dialog modal-sm" role="dialog">
+			      <div class="modal-content">
+			        <div class="modal-header">
+			          <i class="fas fa-exclamation-triangle"></i>
+			          <span class="modal-title"><h4>&nbsp;注意：</h4></span>
+			        </div>
+			        <div class="modal-body">
+						<c:forEach var="message" items="${errorMsgs_Ailee}">
+							<li style="color:red" type="square">${message}</li>
+						</c:forEach>
+			        </div>
+			        <div class="modal-footer">
+			          <button type="button" class="btn btn-default" data-dismiss="modal">關閉</button>
+			        </div>
+			      </div>
+			    </div>
+			 </div>
+		</c:if>
+		<%-- 錯誤表列 --%>
+    
+
         <!-- banner -->
         <div class="banner about-bg">
             <div class="top-banner about-top-banner">
@@ -84,8 +178,23 @@
                     </div>
                     <div class="top-banner-right">
                         <ul>
-                            <li><a class="top_banner" href="#"><i class="fa fa-user" aria-hidden="true"></i></a></li>
-                            <li><a class="top_banner" href="#"><i class="fa fa-shopping-cart" aria-hidden="true"></i></a></li>
+	                        <li>
+		                      	 <!-- 判斷是否登入，若有登入將會出現登出按鈕 -->
+		                         <c:choose>
+		                          <c:when test="<%=login_state %>">
+		                           	<a href="<%= request.getContextPath()%>/front_end/member/member.do?action=logout"><span class=" top_banner"><i class=" fas fa-sign-out-alt" aria-hidden="true"></i></span></a>
+		                          </c:when>
+		                          <c:otherwise>
+		                           	<a href="<%= request.getContextPath()%>/front_end/member/mem_login.jsp"><span class="top_banner"><i class=" fa fa-user" aria-hidden="true"></i></span></a>
+		                          </c:otherwise>
+		                         </c:choose>
+		                    </li>
+	                    	<li style="<%= logout %>"><a class="top_banner" href="<%=request.getContextPath()%>/front_end/personal_area/personal_area_home.jsp"><i class="fa fa-user" aria-hidden="true"></i></a></li>          	
+                           	<li>
+								<a class="top_banner" href="<%=request.getContextPath()%>/front_end/store/store_cart.jsp">
+									<i class="fa fa-shopping-cart shopping-cart" aria-hidden="true"></i><span class="badge">${total_items}</span>
+								</a>
+							</li>
                             <li><a class="top_banner" href="#"><i class="fa fa-envelope" aria-hidden="true"></i></a></li>
                         </ul>
                     </div>
@@ -108,16 +217,15 @@
                             <!-- Collect the nav links, forms, and other content for toggling -->
                             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                                 <ul class="nav navbar-nav">
-                                    <li><a href="news.html">最新消息</a></li>
-                                    <li><a href="tour.html">景點介紹</a></li>
-                                    <li><a href="plan.html">行程規劃</a></li>
-                                    <li><a href="blog.jsp">旅遊記</a></li>
-                                    <li><a href="ask.html">問答區</a></li>
-                                    <li><a href="galley.html">照片牆</a></li>
-                                    <li><a href="chat.html">聊天室</a></li>
-                                    <li><a href="together.html">揪團</a></li>
-                                    <li><a href="buy.html">交易平台</a></li>
-                                    <li><a href="<%=request.getContextPath()%>/front_end/ad/ad.jsp">專欄</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/news/news.jsp">最新消息</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/attractions/att.jsp">景點介紹</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/trip/trip.jsp">行程規劃</a></li>
+                                <li><a href="<%=request.getContextPath()%>/blog.index">旅遊記</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/question/question.jsp">問答區</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/photowall/photo_wall.jsp">照片牆</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/grp/grpIndex.jsp">揪團</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/store/store.jsp">交易平台</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/ad/ad.jsp">專欄</a></li>
 
                                     <div class="clearfix"> </div>
                                 </ul>
@@ -244,9 +352,9 @@
                         </div>
                         <div class="footer-grid-info">
                             <ul>
-                                <li><a href="about.html">關於Travel Maker</a></li>
-                                <li><a href="about.html">聯絡我們</a></li>
-                                <li><a href="about.html">常見問題</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/about_us/about_us.jsp">關於Travel Maker</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/content/content.jsp">聯絡我們</a></li>
+                                <li><a href="<%=request.getContextPath()%>/front_end/faq/faq.jsp">常見問題</a></li>
                             </ul>
                         </div>
                     </div>
@@ -288,147 +396,13 @@
                 </div>
                 <div class="copyright">
                     <p>Copyright &copy; 2018 All rights reserved
-                        <a href="index.jsp" target="_blank" title="TravelMaker">TravelMaker</a>
+                        <a href="<%=request.getContextPath()%>/front_end/index.jsp" target="_blank" title="TravelMaker">TravelMaker</a>
                     </p>
                 </div>
             </div>
         </div>
         <!-- //footer -->
 
-        <!-- 小的聊天列表 start-->
-        <div class="chatContainer">
-            <div class="chatHeader">
 
-                    &nbsp;<i class="fas fa-comment"></i>&nbsp;聊天室
-                    <span style="float: right;padding-right: 10px" id="chat_addFri_span">
-                        <span data-toggle="tooltip" title="建立新對話" data-placement="top" >
-                            <i class="fas fa-user-plus"></i>
-                        </span>
-                    </span> 
-
-            </div>
-            <div class="chatContext">
-                <ul class="list-group">
-                    <li class="list-group-item"><img class="avatar" src="./images/p1.jpg">凱文</li>
-                    <li class="list-group-item"><img class="avatar" src="./images/p2.jpg">大眼怪</li>
-                    <li class="list-group-item"><img class="avatar" src="./images/p3.png">卡納赫拉</li>
-                    <li class="list-group-item"><img class="avatar" src="./images/p4.png">臭跩貓</li>
-                    <li class="list-group-item"><img class="avatar" src="./images/p5.jpg">好想兔</li>
-                    <li class="list-group-item"><img class="avatar" src="./images/p6.png">茶包</li>
-                </ul>
-            </div>
-            <div class="chatFooter">
-                <div class="input-group">
-                  <span class="input-group-addon" id="basic-addon1"><i class="fas fa-search"></i></span>
-                  <input type="text" class="form-control" placeholder="搜尋" aria-describedby="basic-addon1" id="search_Fri">
-                </div>
-            </div>
-        </div>
-        <!-- 小的聊天列表 END -->
-
-        <!-- Modal 建立聊天視窗 start-->
-        <div class="modal fade" id="chat_AddFri_Modal" role="dialog">
-            <div class="modal-dialog">
-              <!-- Modal 建立聊天視窗content start-->
-              <div class="modal-content" >
-                <div class="modal-header">
-                  <h4 class="modal-title">建立聊天</h4>
-                </div>
-                <div class="modal-body"> 
-                    <!--輸入盒聊天對話-->
-                    <div class="ui left icon input fluid">
-                      <input type="text" placeholder="為聊天命名" id="chatName" required>
-                      <i class="users icon"></i>
-                    </div>
-                    <!--分隔線-->
-                    <hr>
-                    <!--搜尋要加入聊天對話的好友-->
-                    <div style="height:400px;margin-top:10px">
-                          <div style="float:left;width:60%;height:inherit">
-                              <div class="ui icon input fluid">
-                                  <input type="text" placeholder="搜尋要加入的用戶" id="search_Fri_modal">
-                                  <i class="search icon"></i>
-                              </div>
-                              <div class="ui middle aligned selection list" style="height:89%;overflow:auto">
-
-                                   <div class="item">
-                                       <input type="checkbox" class="ui checkbox" id="fri01">
-                                       <label for="fri01" style="width:80%">
-                                          <img class="ui avatar image" src="./images/p1.jpg">
-                                          <span class="content">小小兵small</span>  
-                                       </label>
-                                   </div>
-                                   <div class="item">
-                                       <input type="checkbox" class="ui checkbox" id="fri02">
-                                       <label for="fri02" style="width:80%">
-                                          <img class="ui avatar image" src="./images/p2.jpg">
-                                          <span class="content">大眼怪eye</span>  
-                                       </label>
-                                   </div>
-                                   <div class="item">
-                                       <input type="checkbox" class="ui checkbox" id="fri03">
-                                       <label for="fri03" style="width:80%">
-                                          <img class="ui avatar image" src="./images/p3.png">
-                                          <span class="content">卡納赫拉kanihei</span>  
-                                       </label>
-                                   </div>
-                                   <div class="item">
-                                       <input type="checkbox" class="ui checkbox" id="fri04">
-                                       <label for="fri04" style="width:80%">
-                                          <img class="ui avatar image" src="./images/p4.png">
-                                          <span class="content">北爛貓cat</span>  
-                                       </label>
-                                   </div>
-                                   <div class="item">
-                                       <input type="checkbox" class="ui checkbox" id="fri05">
-                                       <label for="fri05" style="width:80%">
-                                          <img class="ui avatar image" src="./images/p5.jpg">
-                                          <span class="content">好想兔rabbit</span>  
-                                       </label>
-                                   </div>
-                                   <div class="item">
-                                       <input type="checkbox" class="ui checkbox" id="fri06">
-                                       <label for="fri06" style="width:80%">
-                                          <img class="ui avatar image" src="./images/p6.png">
-                                          <span class="content">豆卡頻道dog</span>  
-                                       </label>
-                                   </div>
-                                   <div class="item">
-                                       <input type="checkbox" class="ui checkbox" id="fri07">
-                                       <label for="fri07" style="width:80%">
-                                          <img class="ui avatar image" src="./images/author1.jpg">
-                                          <span class="content">美女women</span>  
-                                       </label>
-                                   </div>
-                                   <div class="item">
-                                       <input type="checkbox" class="ui checkbox" id="fri08">
-                                       <label for="fri08" style="width:80%">
-                                          <img class="ui avatar image" src="./images/t4.jpg">
-                                          <span class="content">帥哥man</span>  
-                                       </label>
-                                   </div>
-
-                              </div>
-                          </div>
-                          <!--已選擇加入聊天對話列表-->
-                          <div style="float:left;width:40%;height:inherit;border-left: 1px" id="select_Fri">
-                              <div style="padding-left: 20px;height: 10%">
-                              已選擇<i class="check circle icon"></i>
-                              </div>
-                              <div class="ui middle aligned selection list" style="height:89%;overflow:auto" id="select_FriList">
-                                    <!--這裡我要塞被選到的好友；動態顯示--> 
-                              </div>
-                          </div>         
-                    </div>    
-                </div>
-                <div class="modal-footer"> 
-                  <button type="button" class="btn btn-danger" data-dismiss="modal">取消</button>
-                  <button type="button" class="btn btn-success">確認</button>
-                </div>
-              </div>
-              <!-- Modal 建立聊天視窗content END-->
-            </div>
-          </div>
-        <!-- Modal 建立聊天視窗 END -->
     </body>
 </html>

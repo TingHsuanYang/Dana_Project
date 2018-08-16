@@ -246,6 +246,8 @@ a:hover .image {
     color: rgba(0,0,0,.4);
     padding: .75em 1em;
     border-top: 1px solid rgba(0,0,0,.05)!important;
+    position:absolute;
+    bottom:0;
 }
 .userIcon {
     margin-right: 3.5px;
@@ -257,8 +259,6 @@ a:hover .image {
 .swiper-slide.swiperCard {
     transition-property: none;
 }
-
-
 
 
 

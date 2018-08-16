@@ -3,6 +3,17 @@
 <%@ page import="com.mem.model.*"%>
 
 <%
+	MemberVO memberVO = (MemberVO)session.getAttribute("memberVO");	
+
+	boolean login_state = false;
+	Object login_state_temp = session.getAttribute("login_state");
+	if(login_state_temp!=null){
+		login_state=(boolean)login_state_temp;
+	}
+	
+	if(login_state!=true){
+		response.sendRedirect("/CA102G4/front_end/member/mem_login.jsp");
+	}
 
  %>
 <html>
@@ -56,7 +67,7 @@
   
   
   <li>
-    <FORM METHOD="post" ACTION="member.do" >
+    <FORM METHOD="post" ACTION="/CA102G4/front_end/member/member.do" >
         <b>輸入員工編號 (如7001):</b>
         <input type="text" name="mem_Id">
         <input type="hidden" name="action" value="getOne_For_Display">
@@ -67,7 +78,7 @@
   <jsp:useBean id="memberSvc" scope="page" class="com.mem.model.MemberService" />
    
   <li>
-     <FORM METHOD="post" ACTION="member.do" >
+     <FORM METHOD="post" ACTION="/CA102G4/front_end/member/member.do" >
        <b>選擇員工編號:</b>
        <select size="1" name="mem_Id">
          <c:forEach var="memberVO" items="${memberSvc.all}" > 

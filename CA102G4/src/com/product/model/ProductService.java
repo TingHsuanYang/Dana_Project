@@ -2,6 +2,7 @@ package com.product.model;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -62,6 +63,10 @@ public class ProductService {
 
 		return productVO;
 	}
+	
+	public void updateProduct(ProductVO productVO) {
+		dao.update(productVO);
+	}
 
 	public void deleteProduct(Integer product_id) {
 		dao.delete(product_id);
@@ -77,5 +82,9 @@ public class ProductService {
 	
 	public Set<ProductVO> getSellerProducts(String product_mem_id) {
 		return dao.getProductsBySellerid(product_mem_id);
+	}
+	
+	public List<ProductVO> getAll(Map<String, String[]> map) {
+		return dao.getAll(map);
 	}
 }
